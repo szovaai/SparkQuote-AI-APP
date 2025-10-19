@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SparkQuote AI</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script type="importmap">
+  {
+    "imports": {
+      "react": "https://aistudiocdn.com/react@^19.2.0",
+      "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+      "react/": "https://aistudiocdn.com/react@^19.2.0/",
+      "@google/genai": "https://aistudiocdn.com/@google/genai@^1.25.0"
+    }
+  }
+  </script>
+
+  <style>
+    /* Global Styles & Design System */
+    :root {
+      --bg: #0F141B; /* Card panels */
+      --bg-alt: #0D1117; /* Graphite base */
+      --line: #1E293B; /* Borders/Lines */
+      --fg: #E8F2EE; /* Text Primary */
+      --muted: #93A1AF; /* Text Muted */
+      --primary: #00D58C; /* Mint */
+      --secondary: #F59E0B; /* Amber */
+      --info: #22D3EE; /* Cyan */
+      --error: #EF4444;
+      --success: #10B981;
+    }
+
+    /* Reset and base styles */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    html {
+      /* Slightly reduce base font size to make UI more compact */
+      font-size: 15px; 
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+      background-color: var(--bg-alt);
+      color: var(--fg);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* Custom utility classes to be used with Tailwind */
+    .input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      background: var(--bg-alt);
+      color: var(--fg);
+      border-radius: 8px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(0, 213, 140, 0.2);
+    }
+    
+    .btn-primary {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 14px;
+      border: 0;
+      border-radius: 8px;
+      background-image: linear-gradient(135deg, var(--primary), var(--info));
+      color: var(--bg-alt);
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.2s ease, opacity 0.2s;
+    }
+    .btn-primary:hover:not(:disabled) {
+      transform: scale(1.03);
+    }
+    .btn-primary:disabled {
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+    
+    .btn-secondary {
+       padding: 8px 12px;
+       border: 1px solid var(--line);
+       border-radius: 8px;
+       background: transparent;
+       color: var(--muted);
+       font-weight: 600;
+       cursor: pointer;
+       transition: background-color 0.2s, color 0.2s;
+    }
+    .btn-secondary:hover {
+       background-color: var(--line);
+       color: var(--fg);
+    }
+
+    .section-title {
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      color: var(--muted);
+      letter-spacing: 0.5px;
+      font-weight: 600;
+    }
+
+    /* Custom Scrollbar Styling */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent; /* Make track invisible */
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background-color: var(--line); /* Use the subtle border color */
+      border-radius: 10px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background-color: var(--muted); /* Lighter color on hover */
+    }
+
+
+    /* Print-specific styles for PDF export */
+    @media print {
+      html, body {
+        background-color: #fff !important;
+        color: #000 !important;
+        font-size: 12px;
+      }
+      
+      aside, .print\:hidden {
+        display: none !important;
+      }
+
+      main {
+        width: 100%;
+        height: auto;
+        overflow: visible;
+        padding: 0;
+      }
+      
+      .print\:shadow-none { box-shadow: none !important; }
+      .print\:border-none { border: none !important; }
+      .print\:my-0 { margin-top: 0 !important; margin-bottom: 0 !important; }
+    }
+  </style>
+</head>
+<body>
+  <noscript>You need to enable JavaScript to run this app.</noscript>
+  <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>
