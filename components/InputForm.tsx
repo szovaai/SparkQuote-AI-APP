@@ -79,7 +79,7 @@ const InputForm: React.FC<InputFormProps> = ({ formData, setFormData, onGenerate
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex-grow overflow-y-auto pr-2 space-y-1">
+      <div className="flex-grow overflow-y-auto pr-2">
         
         <Accordion title="Job Details" defaultOpen>
             <InputField id="trade" name="trade" label="Trade" type="select" value={selectedTrade} onChange={handleGeneralChange}>
