@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>SparkQuote AI</title>
 
-  <!-- Tailwind (optional, you can remove if not using) -->
+  <!-- Tailwind (optional) -->
   <script src="https://cdn.tailwindcss.com"></script>
 
   <style>
@@ -19,6 +19,16 @@
       --primary: #00D58C;
       --accent: #22D3EE;
       --error: #EF4444;
+    }
+    :root.light {
+      --bg: #ffffff;
+      --bg-alt: #f8fafc;
+      --line: #e2e8f0;
+      --fg: #0b1220;
+      --muted: #475569;
+      --primary: #16a34a;
+      --accent: #0ea5e9;
+      --error: #dc2626;
     }
 
     html, body {
@@ -84,12 +94,10 @@
       border-top:1px solid var(--line); padding:10px 16px; font-weight:600;
     }
 
-    /* Scrollbar */
     ::-webkit-scrollbar { width:8px; height:8px; }
     ::-webkit-scrollbar-thumb { background: var(--line); border-radius:10px; }
     ::-webkit-scrollbar-track { background: transparent; }
 
-    /* Print */
     @media print {
       html, body { background: #fff !important; color: #000 !important; font-size: 12px; }
       .no-print { display:none !important; }
@@ -102,7 +110,7 @@
     <div style="display:flex; gap:10px; align-items:center;">
       <div style="width:28px;height:28px;border-radius:8px;background:var(--primary);"></div>
       <strong>SparkQuote AI</strong>
-      <span class="badge">v0.2</span>
+      <span class="badge">v0.3</span>
     </div>
     <div style="display:flex; gap:8px; align-items:center;">
       <button id="themeToggle" class="btn-ghost" style="width:auto;padding:8px 12px;">🌙</button>
@@ -115,8 +123,6 @@
     <!-- Left: Form -->
     <section class="card no-print">
       <div class="section-title">Basics</div>
-      <label>Gemini API Key</label>
-      <input id="apiKey" class="input" placeholder="Paste your Google Gemini API key" />
 
       <label>Trade</label>
       <select id="trade" class="input"></select>
@@ -172,11 +178,7 @@
     <pre id="errorText" style="white-space:pre-wrap;font-family:ui-monospace,monospace;"></pre>
   </div>
 
-  <!-- App script: static, no build needed -->
   <script type="module">
-    // Import Gemini SDK from a CDN that sets the correct MIME type
-    import { GoogleGenerativeAI } from "https://esm.sh/@google/generative-ai?bundle";
-
     // Theme toggle with persistence
     const root = document.documentElement;
     const savedTheme = localStorage.getItem('sparkquote-theme');
@@ -202,7 +204,7 @@
     window.addEventListener('error', e => showErr((e.error && e.error.stack) || e.message));
     window.addEventListener('unhandledrejection', e => showErr((e.reason && e.reason.stack) || String(e.reason)));
 
-    // Safe JSON parse (strips markdown fences)
+    // Safe JSON parse (for when model returns JSON blocks)
     function safeParseJSON(txt) {
       if (typeof txt !== "string") return null;
       const cleaned = txt
@@ -248,62 +250,13 @@
       document.getElementById('summary').value = pad;
     });
 
-    // Gemini call wrapper with one strict retry + timeout
-    async function callGeminiJSON({ model, userText, timeoutMs = 20000 }) {
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), timeoutMs);
+    // =============== Vercel AI SDK client call (to your server route) ===============
+    // This streams text from /api/chat (standard Vercel AI SDK endpoint).
+    // If your route is different (e.g. /api/generate), change CHAT_ENDPOINT below.
+    const CHAT_ENDPOINT = '/api/chat';
 
-      async function once(sysText) {
-        const res = await model.generateContent(
-          [{ role: "user", parts: [{ text: (sysText + "\n\n" + userText).trim() }] }],
-          { signal: controller.signal }
-        );
-        const text = res?.response?.text?.() ?? "";
-        const json = safeParseJSON(text);
-        return { json, raw: text };
-      }
-
-      const BASE = `You are a precise contractor proposal assistant. Always respond in VALID JSON only.`;
-      const FORCE = `CRITICAL: Return JSON ONLY. No markdown or extra text.`;
-
-      try {
-        let { json, raw } = await once(BASE);
-        if (json) { clearTimeout(timer); return json; }
-        console.warn("[Gemini] First parse failed, retrying strict.", { raw });
-        ({ json, raw } = await once(BASE + "\n" + FORCE));
-        clearTimeout(timer);
-        if (json) return json;
-        throw new Error("Gemini did not return valid JSON after one retry.");
-      } catch (err) {
-        clearTimeout(timer);
-        if (err?.name === "AbortError") throw new Error("The request timed out. Please try again.");
-        throw err;
-      }
-    }
-
-    // Generate handler
-    async function onGenerate() {
-      try {
-        document.getElementById('loading').style.display = 'block';
-        const apiKey = document.getElementById('apiKey').value.trim();
-        if (!apiKey) throw new Error("Enter your Gemini API key.");
-        const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
-        const payload = {
-          trade: tradeEl.value,
-          title: projectEl.value,
-          city_region: document.getElementById('city').value,
-          client_type: document.getElementById('client').value,
-          job_summary: document.getElementById('summary').value,
-          scope_bullets: "", // wire from your package section if you have one
-          constraints: "",
-          timeline: "",
-          warranty_months: 12,
-          validity_days: 14
-        };
-
-        const prompt = `
+    async function streamFromAI(payload) {
+      const system = `
 Return STRICT JSON only with keys:
 {
  "cover_letter": "string",
@@ -316,19 +269,91 @@ Return STRICT JSON only with keys:
  "terms_conditions": ["string"],
  "acceptance_block": "string"
 }
-Context:
+Rules:
+- JSON only. No markdown. Keep it concise and client-friendly.
+- If info is missing, make safe, generic assumptions.
+      `.trim();
+
+      const user = `
 Trade: ${payload.trade}
 Project title: ${payload.title}
 City/Region: ${payload.city_region}
 Client type: ${payload.client_type}
-Job summary: ${payload.job_summary}
-Rules:
-- JSON only. No markdown.
-- If info is missing, make safe, generic assumptions.
-`.trim();
+Job summary (basis for AI):
+${payload.job_summary}
+      `.trim();
 
-        const data = await callGeminiJSON({ model, userText: prompt });
-        // Render a tiny preview (simplified)
+      // Standard Vercel AI SDK chat schema
+      const body = {
+        messages: [
+          { role: 'system', content: system },
+          { role: 'user', content: user }
+        ]
+      };
+
+      const res = await fetch(CHAT_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+
+      if (!res.ok) {
+        const txt = await res.text();
+        throw new Error(`API error ${res.status}: ${txt}`);
+      }
+
+      // Most AI SDK routes return a text stream (text/plain)
+      const contentType = res.headers.get('content-type') || '';
+      const isTextStream = contentType.includes('text/');
+      if (!isTextStream || !res.body) {
+        // Fallback: try JSON body
+        try {
+          const data = await res.json();
+          return typeof data === 'string' ? data : JSON.stringify(data);
+        } catch {
+          return await res.text();
+        }
+      }
+
+      // Stream chunks into a string
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let result = '';
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        result += decoder.decode(value, { stream: true });
+      }
+      result += decoder.decode(); // flush
+      return result;
+    }
+
+    // Generate handler (no API key needed)
+    async function onGenerate() {
+      const loadingEl = document.getElementById('loading');
+      try {
+        loadingEl.style.display = 'block';
+        const payload = {
+          trade: tradeEl.value,
+          title: projectEl.value,
+          city_region: document.getElementById('city').value,
+          client_type: document.getElementById('client').value,
+          job_summary: document.getElementById('summary').value
+        };
+
+        // Call your AI route
+        const raw = await streamFromAI(payload);
+
+        // Try to parse JSON first
+        let data = safeParseJSON(raw);
+        if (!data) {
+          // If the model returned prose, try to extract JSON roughly
+          const match = raw.match(/\{[\s\S]*\}$/);
+          data = match ? safeParseJSON(match[0]) : null;
+        }
+        if (!data) throw new Error("Model did not return valid JSON:\n" + raw.slice(0, 500));
+
+        // Render a preview
         const html = `
           <h2 style="margin:0 0 8px 0;">${payload.title || 'Proposal'}</h2>
           <p>${(data.cover_letter || '').replace(/\n/g,'<br>')}</p>
@@ -343,10 +368,11 @@ Rules:
           <p><em>${data.acceptance_block || ''}</em></p>
         `;
         document.getElementById('proposalHtml').innerHTML = html;
+
       } catch (e) {
         showErr(e?.message || String(e));
       } finally {
-        document.getElementById('loading').style.display = 'none';
+        loadingEl.style.display = 'none';
       }
     }
 
@@ -356,9 +382,8 @@ Rules:
     // Copy / Download helpers
     document.getElementById('copyBtn')?.addEventListener('click', async () => {
       try {
-        const html = document.getElementById('proposalHtml').innerText;
-        await navigator.clipboard.writeText(html);
-        alert("Copied proposal text.");
+        const txt = document.getElementById('proposalHtml').innerText;
+        await navigator.clipboard.writeText(txt);
       } catch { alert("Copy failed."); }
     });
     document.getElementById('downloadBtn')?.addEventListener('click', () => {
