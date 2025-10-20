@@ -28,12 +28,16 @@ export interface FormData {
   brand: string;
   license: string;
   proposalNumberPrefix: string;
+  attachments?: string[];
+  primaryColor: string;
+  secondaryColor: string;
 }
 
 export interface LineItem {
   desc: string;
   qty: number;
   unit: string;
+
   rate: number;
   amount: number;
   type: 'material' | 'labor';
@@ -59,7 +63,44 @@ export interface Quote {
   depositPercent: number;
 }
 
+export interface GeneratedContent {
+  cover_letter: string;
+  scope_of_work: string[];
+  inclusions: string[];
+  exclusions: string[];
+  schedule_notes: string;
+  payment_schedule: { milestone: string; percent: number }[];
+  warranty: string;
+  terms_conditions: string[];
+  acceptance_block: string;
+}
+
 export interface UpsellSuggestion {
   name: string;
-  description: string;
+  why_it_matters: string;
+  line_item: string; // e.g., "desc | qty | unit | rate"
+}
+
+export interface PackageComparison {
+  differences: string[];
+  who_should_choose: {
+    [key in PackageTier]: string;
+  };
+  risk_notes: string[];
+}
+
+export interface FollowUpEmail {
+  subject: string;
+  body: string;
+}
+
+export interface ChangeOrder {
+  change_order_summary: string;
+  added_scope: string[];
+  removed_scope: string[];
+  price_delta: {
+    items: string[]; // "desc | qty | unit | rate"
+    notes: string;
+  };
+  schedule_delta: string;
 }

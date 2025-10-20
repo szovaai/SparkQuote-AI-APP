@@ -46,6 +46,8 @@ const createPlaceholderPreset = (jobTitle: string, trade: string) => {
     brand: brands[trade],
     license: licenses[trade],
     proposalNumberPrefix: brands[trade].substring(0,3).toUpperCase(),
+    primaryColor: '#00D58C',
+    secondaryColor: '#F59E0B',
   };
 };
 
@@ -157,6 +159,8 @@ const detailedPresets: { [trade: string]: { jobs: { [project: string]: any } } }
         brand: 'TrueCan Power Systems',
         license: 'AB-ELC-123456',
         proposalNumberPrefix: 'TPS',
+        primaryColor: '#22D3EE',
+        secondaryColor: '#F59E0B',
       },
       "Level-2 EV Charger Install (240V)": {
         siteAddress: '456 Tech Ave, Toronto, ON',
@@ -192,6 +196,8 @@ const detailedPresets: { [trade: string]: { jobs: { [project: string]: any } } }
         brand: 'ChargeRight Electrical',
         license: 'ON-ELC-789012',
         proposalNumberPrefix: 'CRE',
+        primaryColor: '#00D58C',
+        secondaryColor: '#F59E0B',
       }
     }
   },
@@ -231,6 +237,8 @@ const detailedPresets: { [trade: string]: { jobs: { [project: string]: any } } }
         brand: 'Flow Masters Plumbing',
         license: 'BC-PLM-334455',
         proposalNumberPrefix: 'FMP',
+        primaryColor: '#3B82F6',
+        secondaryColor: '#10B981',
       }
     }
   }
