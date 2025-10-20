@@ -90,14 +90,19 @@
     "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
     "react-dom/client": "https://aistudiocdn.com/react-dom@^19.2.0/client",
     "@google/genai": "https://aistudiocdn.com/@google/genai@^1.25.0",
-    "use-debounce": "https://aistudiocdn.com/use-debounce@^10.0.6"
+    "use-debounce": "https://aistudiocdn.com/use-debounce@^10.0.6",
+    "@vercel/node": "https://aistudiocdn.com/@vercel/node@^5.4.1"
   }
 }
 </script>
 </head>
 <body>
   <noscript>You need to enable JavaScript to run this app.</noscript>
-  <div id="root"></div>
+  <div id="root">
+    <div style="display: flex; justify-content: center; align-items: center; height: 100vh; font-family: sans-serif; color: var(--muted);">
+      Loading SparkQuote AI...
+    </div>
+  </div>
   <script type="module" src="./index.tsx"></script>
 </body>
 </html>
