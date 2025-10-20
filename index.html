@@ -5,225 +5,371 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>SparkQuote AI</title>
 
+  <!-- Tailwind (optional, you can remove if not using) -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <script type="importmap">
-{
-  "imports": {
-    "react": "https://aistudiocdn.com/react@^19.2.0",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-    "react/": "https://aistudiocdn.com/react@^19.2.0/",
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.25.0",
-    "use-debounce": "https://aistudiocdn.com/use-debounce@^10.0.6"
-  }
-}
-</script>
 
   <style>
-  body {
-    margin: 0;
-    line-height: inherit;
-  }
-  ... /* === Dark Mode UI Enhancements === */
-:root {
-  --bg: #0D1117;
-  --bg-alt: #0F141B;
-  --line: #1E293B;
-  --fg: #E8F2EE;
-  --muted: #9CA3AF;
-  --primary: #00D58C;
-  --accent: #22D3EE;
-  --error: #EF4444;
-}
+    /* === Dark Mode UI Enhancements === */
+    :root {
+      --bg: #0D1117;
+      --bg-alt: #0F141B;
+      --line: #1E293B;
+      --fg: #E8F2EE;
+      --muted: #9CA3AF;
+      --primary: #00D58C;
+      --accent: #22D3EE;
+      --error: #EF4444;
+    }
 
-body {
-  background-color: var(--bg);
-  color: var(--fg);
-  font-family: 'Inter', system-ui, sans-serif;
-  margin: 0;
-  line-height: 1.6;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-.container {
-  max-width: 960px;
-  margin: 3rem auto;
-  padding: 2rem;
-  background: var(--bg-alt);
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
-}
-
-input, textarea, select, button {
-  background: var(--bg);
-  color: var(--fg);
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 10px 14px;
-  width: 100%;
-  margin-bottom: 12px;
-}
-
-button {
-  background: var(--primary);
-  color: #000;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.25s ease;
-}
-
-button:hover {
-  background: var(--accent);
-  transform: translateY(-2px);
-}
-/* === End Dark Mode Enhancements === */
-
-</style>
-
-    /* Reset and base styles */
-    * {
-      box-sizing: border-box;
+    html, body {
       margin: 0;
       padding: 0;
-    }
-    
-    html {
-      /* Slightly reduce base font size to make UI more compact */
-      font-size: 15px; 
-    }
-
-    body {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
-      background-color: var(--bg-alt);
+      background: var(--bg);
       color: var(--fg);
+      font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      line-height: 1.6;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
     }
 
-    /* Custom utility classes to be used with Tailwind */
-    .input {
-      width: 100%;
-      padding: 10px 12px;
-      border: 1px solid var(--line);
-      background: var(--bg-alt);
-      color: var(--fg);
-      border-radius: 8px;
-      transition: border-color 0.2s, box-shadow 0.2s;
+    .header {
+      display:flex; align-items:center; justify-content:space-between;
+      gap: 12px; padding: 14px 18px; border-bottom: 1px solid var(--line);
+      position: sticky; top: 0; background: rgba(13,17,23,.94); backdrop-filter: blur(6px);
     }
-    .input:focus {
+    .badge { font-size:12px; color:var(--muted); border:1px dashed var(--line); padding:4px 8px; border-radius:999px; }
+
+    .container {
+      max-width: 1100px; margin: 20px auto; padding: 0 16px;
+      display: grid; grid-template-columns: 360px 1fr; gap: 16px;
+    }
+    .card {
+      background: var(--bg-alt);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+    }
+    .section-title {
+      font-size: 12px; text-transform: uppercase; color: var(--muted); letter-spacing:.5px; margin-bottom: 6px;
+    }
+
+    .input, select, textarea, button {
+      width: 100%;
+      background: #0B0F14;
+      color: var(--fg);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px 12px;
+      margin-bottom: 12px;
+    }
+    .input:focus, select:focus, textarea:focus {
       outline: none;
       border-color: var(--primary);
-      box-shadow: 0 0 0 2px rgba(0, 213, 140, 0.2);
-    }
-    
-    .btn-primary {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 10px 14px;
-      border: 0;
-      border-radius: 8px;
-      background-image: linear-gradient(135deg, var(--primary), var(--info));
-      color: var(--bg-alt);
-      font-weight: 700;
-      cursor: pointer;
-      transition: transform 0.2s ease, opacity 0.2s;
-    }
-    .btn-primary:hover:not(:disabled) {
-      transform: scale(1.03);
-    }
-    .btn-primary:disabled {
-      cursor: not-allowed;
-      opacity: 0.6;
-    }
-    
-    .btn-secondary {
-       padding: 8px 12px;
-       border: 1px solid var(--line);
-       border-radius: 8px;
-       background: transparent;
-       color: var(--muted);
-       font-weight: 600;
-       cursor: pointer;
-       transition: background-color 0.2s, color 0.2s;
-    }
-    .btn-secondary:hover {
-       background-color: var(--line);
-       color: var(--fg);
+      box-shadow: 0 0 0 3px rgba(0,213,140,0.25);
     }
 
-    .section-title {
-      font-size: 0.9rem;
-      text-transform: uppercase;
-      color: var(--muted);
-      letter-spacing: 0.5px;
-      font-weight: 600;
+    .btn {
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      color: #0B0F14; border: 0; border-radius: 12px;
+      font-weight: 700; padding: 10px 14px; cursor: pointer;
+      transition: transform .15s ease, opacity .15s;
+    }
+    .btn:hover { transform: translateY(-1px); }
+    .btn-ghost { background: transparent; color: var(--fg); border: 1px solid var(--line); }
+
+    .totals {
+      display:flex; gap:16px; align-items:center; justify-content:flex-end;
+      position: sticky; bottom:0; background: rgba(13,17,23,.94);
+      border-top:1px solid var(--line); padding:10px 16px; font-weight:600;
     }
 
-    /* Custom Scrollbar Styling */
-    ::-webkit-scrollbar {
-      width: 8px;
-      height: 8px;
-    }
+    /* Scrollbar */
+    ::-webkit-scrollbar { width:8px; height:8px; }
+    ::-webkit-scrollbar-thumb { background: var(--line); border-radius:10px; }
+    ::-webkit-scrollbar-track { background: transparent; }
 
-    ::-webkit-scrollbar-track {
-      background: transparent; /* Make track invisible */
-    }
-
-    ::-webkit-scrollbar-thumb {
-      background-color: var(--line); /* Use the subtle border color */
-      border-radius: 10px;
-    }
-
-    ::-webkit-scrollbar-thumb:hover {
-      background-color: var(--muted); /* Lighter color on hover */
-    }
-
-
-    /* Print-specific styles for PDF export */
+    /* Print */
     @media print {
-      html, body {
-        background-color: #fff !important;
-        color: #000 !important;
-        font-size: 12px;
-      }
-      
-      aside, .print\:hidden {
-        display: none !important;
-      }
-
-      main {
-        width: 100%;
-        height: auto;
-        overflow: visible;
-        padding: 0;
-      }
-      
-      .print\:shadow-none { box-shadow: none !important; }
-      .print\:border-none { border: none !important; }
-      .print\:my-0 { margin-top: 0 !important; margin-bottom: 0 !important; }
-
-      .references-section {
-        page-break-before: always;
-        padding-top: 1rem;
-      }
-      .references-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 1rem;
-      }
-      .reference-image-container img {
-        width: 100%;
-        border: 1px solid #eee;
-        border-radius: 4px;
-      }
+      html, body { background: #fff !important; color: #000 !important; font-size: 12px; }
+      .no-print { display:none !important; }
+      .card { border: none !important; box-shadow: none !important; }
     }
   </style>
 </head>
 <body>
-  <noscript>You need to enable JavaScript to run this app.</noscript>
-  <div id="root"></div>
-  <script type="module" src="/index.tsx"></script>
+  <header class="header no-print">
+    <div style="display:flex; gap:10px; align-items:center;">
+      <div style="width:28px;height:28px;border-radius:8px;background:var(--primary);"></div>
+      <strong>SparkQuote AI</strong>
+      <span class="badge">v0.2</span>
+    </div>
+    <div style="display:flex; gap:8px; align-items:center;">
+      <button id="themeToggle" class="btn-ghost" style="width:auto;padding:8px 12px;">🌙</button>
+      <button id="saveBtn" class="btn-ghost" style="width:auto;padding:8px 12px;">Save</button>
+      <button id="generateBtn" class="btn" style="width:auto;">Generate Proposal</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- Left: Form -->
+    <section class="card no-print">
+      <div class="section-title">Basics</div>
+      <label>Gemini API Key</label>
+      <input id="apiKey" class="input" placeholder="Paste your Google Gemini API key" />
+
+      <label>Trade</label>
+      <select id="trade" class="input"></select>
+
+      <label>Project Title</label>
+      <select id="project" class="input"></select>
+
+      <label>City / Region</label>
+      <input id="city" class="input" placeholder="Calgary, AB"/>
+
+      <label>Client Type</label>
+      <select id="client" class="input">
+        <option>Homeowner</option>
+        <option>Landlord</option>
+        <option>General Contractor</option>
+      </select>
+
+      <label>Job Summary (basis for AI)</label>
+      <textarea id="summary" rows="4" class="input"
+        placeholder="Upgrade to 200A panel, add 12 LED pot lights in kitchen/living, add 4 GFCI outlets. Patch/paint by others."></textarea>
+
+      <div style="display:flex; gap:8px;">
+        <button id="loadPreset" class="btn-ghost">Load Preset</button>
+        <button id="genBtn" class="btn">Generate</button>
+      </div>
+      <div id="loading" style="display:none; margin-top:8px;color:var(--muted);">⚙️ Generating…</div>
+    </section>
+
+    <!-- Right: Preview -->
+    <section class="card print:shadow-none print:border-none">
+      <div class="section-title">Preview</div>
+      <div id="proposalHtml" style="min-height:320px;border:1px dashed var(--line);border-radius:12px;padding:12px;">
+        Start by selecting a preset and clicking <em>Generate</em>.
+      </div>
+      <div style="display:flex; gap:8px; margin-top:12px;" class="no-print">
+        <button id="copyBtn" class="btn-ghost">Copy</button>
+        <button id="downloadBtn" class="btn-ghost">Download HTML</button>
+      </div>
+    </section>
+  </main>
+
+  <div class="totals no-print">
+    <span>Subtotal: <strong id="t_sub">—</strong></span>
+    <span>Tax: <strong id="t_tax">—</strong></span>
+    <span>Total: <strong id="t_total">—</strong></span>
+    <span>Deposit: <strong id="t_dep">—</strong></span>
+    <span>Balance: <strong id="t_bal">—</strong></span>
+  </div>
+
+  <!-- Error overlay so blank screens show details -->
+  <div id="errorOverlay" style="display:none;position:fixed;inset:0;background:#0D1117;color:#E8F2EE;z-index:9999;padding:24px;">
+    <h2>⚠️ Something went wrong</h2>
+    <pre id="errorText" style="white-space:pre-wrap;font-family:ui-monospace,monospace;"></pre>
+  </div>
+
+  <!-- App script: static, no build needed -->
+  <script type="module">
+    // Import Gemini SDK from a CDN that sets the correct MIME type
+    import { GoogleGenerativeAI } from "https://esm.sh/@google/generative-ai?bundle";
+
+    // Theme toggle with persistence
+    const root = document.documentElement;
+    const savedTheme = localStorage.getItem('sparkquote-theme');
+    if (savedTheme === 'light') root.classList.add('light');
+    const themeBtn = document.getElementById('themeToggle');
+    if (themeBtn) {
+      themeBtn.textContent = root.classList.contains('light') ? '☀️' : '🌙';
+      themeBtn.onclick = () => {
+        root.classList.toggle('light');
+        localStorage.setItem('sparkquote-theme', root.classList.contains('light') ? 'light' : 'dark');
+        themeBtn.textContent = root.classList.contains('light') ? '☀️' : '🌙';
+      };
+    }
+
+    // Error overlay helpers
+    const showErr = (msg) => {
+      const ov = document.getElementById('errorOverlay');
+      const tx = document.getElementById('errorText');
+      tx.textContent = msg;
+      ov.style.display = 'block';
+      console.error(msg);
+    };
+    window.addEventListener('error', e => showErr((e.error && e.error.stack) || e.message));
+    window.addEventListener('unhandledrejection', e => showErr((e.reason && e.reason.stack) || String(e.reason)));
+
+    // Safe JSON parse (strips markdown fences)
+    function safeParseJSON(txt) {
+      if (typeof txt !== "string") return null;
+      const cleaned = txt
+        .replace(/^\s*```json\s*/i, "")
+        .replace(/^\s*```\s*/i, "")
+        .replace(/\s*```\s*$/i, "")
+        .trim();
+      try { return JSON.parse(cleaned); } catch { return null; }
+    }
+
+    // Load presets safely (root-relative)
+    let PRESETS = {};
+    try {
+      const r = await fetch('/presets.json', { cache: 'no-store' });
+      PRESETS = r.ok ? await r.json() : {};
+    } catch (e) {
+      console.warn('presets.json not loaded; continuing without presets', e);
+      PRESETS = {};
+    }
+
+    // Populate dropdowns
+    const tradeEl = document.getElementById('trade');
+    const projectEl = document.getElementById('project');
+    const tradeNames = Object.keys(PRESETS);
+    tradeEl.innerHTML = tradeNames.map(n => `<option>${n}</option>`).join('') || `<option value="">Select trade</option>`;
+    function refreshProjects() {
+      const t = tradeEl.value;
+      const items = PRESETS[t] || [];
+      projectEl.innerHTML = items.map(x => `<option>${x}</option>`).join('') || `<option value="">Select project</option>`;
+    }
+    tradeEl.addEventListener('change', refreshProjects);
+    refreshProjects();
+
+    // Tiny “Load Preset” example: copy title into summary
+    document.getElementById('loadPreset')?.addEventListener('click', () => {
+      const title = projectEl.value || '';
+      const city = document.getElementById('city').value || 'Your City';
+      const pad = [
+        `Preset: ${title}`,
+        `Location: ${city}`,
+        `Include key scope bullets here…`
+      ].join('\n');
+      document.getElementById('summary').value = pad;
+    });
+
+    // Gemini call wrapper with one strict retry + timeout
+    async function callGeminiJSON({ model, userText, timeoutMs = 20000 }) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+      async function once(sysText) {
+        const res = await model.generateContent(
+          [{ role: "user", parts: [{ text: (sysText + "\n\n" + userText).trim() }] }],
+          { signal: controller.signal }
+        );
+        const text = res?.response?.text?.() ?? "";
+        const json = safeParseJSON(text);
+        return { json, raw: text };
+      }
+
+      const BASE = `You are a precise contractor proposal assistant. Always respond in VALID JSON only.`;
+      const FORCE = `CRITICAL: Return JSON ONLY. No markdown or extra text.`;
+
+      try {
+        let { json, raw } = await once(BASE);
+        if (json) { clearTimeout(timer); return json; }
+        console.warn("[Gemini] First parse failed, retrying strict.", { raw });
+        ({ json, raw } = await once(BASE + "\n" + FORCE));
+        clearTimeout(timer);
+        if (json) return json;
+        throw new Error("Gemini did not return valid JSON after one retry.");
+      } catch (err) {
+        clearTimeout(timer);
+        if (err?.name === "AbortError") throw new Error("The request timed out. Please try again.");
+        throw err;
+      }
+    }
+
+    // Generate handler
+    async function onGenerate() {
+      try {
+        document.getElementById('loading').style.display = 'block';
+        const apiKey = document.getElementById('apiKey').value.trim();
+        if (!apiKey) throw new Error("Enter your Gemini API key.");
+        const genAI = new GoogleGenerativeAI(apiKey);
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+        const payload = {
+          trade: tradeEl.value,
+          title: projectEl.value,
+          city_region: document.getElementById('city').value,
+          client_type: document.getElementById('client').value,
+          job_summary: document.getElementById('summary').value,
+          scope_bullets: "", // wire from your package section if you have one
+          constraints: "",
+          timeline: "",
+          warranty_months: 12,
+          validity_days: 14
+        };
+
+        const prompt = `
+Return STRICT JSON only with keys:
+{
+ "cover_letter": "string",
+ "scope_of_work": ["string"],
+ "inclusions": ["string"],
+ "exclusions": ["string"],
+ "schedule_notes": "string",
+ "payment_schedule": [{"milestone":"string","percent":number}],
+ "warranty": "string",
+ "terms_conditions": ["string"],
+ "acceptance_block": "string"
+}
+Context:
+Trade: ${payload.trade}
+Project title: ${payload.title}
+City/Region: ${payload.city_region}
+Client type: ${payload.client_type}
+Job summary: ${payload.job_summary}
+Rules:
+- JSON only. No markdown.
+- If info is missing, make safe, generic assumptions.
+`.trim();
+
+        const data = await callGeminiJSON({ model, userText: prompt });
+        // Render a tiny preview (simplified)
+        const html = `
+          <h2 style="margin:0 0 8px 0;">${payload.title || 'Proposal'}</h2>
+          <p>${(data.cover_letter || '').replace(/\n/g,'<br>')}</p>
+          <h3>Scope of Work</h3>
+          <ul>${(data.scope_of_work||[]).map(x=>`<li>${x}</li>`).join('')}</ul>
+          <h3>Inclusions</h3>
+          <ul>${(data.inclusions||[]).map(x=>`<li>${x}</li>`).join('')}</ul>
+          <h3>Exclusions</h3>
+          <ul>${(data.exclusions||[]).map(x=>`<li>${x}</li>`).join('')}</ul>
+          <h3>Terms & Conditions</h3>
+          <ul>${(data.terms_conditions||[]).map(x=>`<li>${x}</li>`).join('')}</ul>
+          <p><em>${data.acceptance_block || ''}</em></p>
+        `;
+        document.getElementById('proposalHtml').innerHTML = html;
+      } catch (e) {
+        showErr(e?.message || String(e));
+      } finally {
+        document.getElementById('loading').style.display = 'none';
+      }
+    }
+
+    document.getElementById('genBtn')?.addEventListener('click', onGenerate);
+    document.getElementById('generateBtn')?.addEventListener('click', onGenerate);
+
+    // Copy / Download helpers
+    document.getElementById('copyBtn')?.addEventListener('click', async () => {
+      try {
+        const html = document.getElementById('proposalHtml').innerText;
+        await navigator.clipboard.writeText(html);
+        alert("Copied proposal text.");
+      } catch { alert("Copy failed."); }
+    });
+    document.getElementById('downloadBtn')?.addEventListener('click', () => {
+      const html = document.getElementById('proposalHtml').innerHTML;
+      const blob = new Blob([`<!doctype html><meta charset="utf-8"><title>Proposal</title>${html}`], { type: "text/html" });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = "proposal.html";
+      a.click();
+      URL.revokeObjectURL(a.href);
+    });
+  </script>
 </body>
 </html>
