@@ -1,0 +1,20 @@
+{
+  "Electrical": [
+    "Panel Upgrade (200A)",
+    "Level-2 EV Charger Install (240V)",
+    "Pot Light Package (12x LED + Dimmer)",
+    "Kitchen Remodel Wiring"
+  ],
+  "Plumbing": [
+    "Hot Water Tank Replacement (40–50 gal)",
+    "Tankless Water Heater Install"
+  ],
+  "HVAC": [
+    "Furnace Replacement (High-Efficiency)",
+    "Air Conditioner Install (Split)"
+  ],
+  "Renovation": [
+    "Bathroom Renovation (Standard)",
+    "Basement Development / Suite Conversion"
+  ]
+}
