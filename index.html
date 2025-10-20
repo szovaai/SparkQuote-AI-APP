@@ -19,19 +19,67 @@
 </script>
 
   <style>
-    /* Global Styles & Design System */
-    :root {
-      --bg: #0F141B; /* Card panels */
-      --bg-alt: #0D1117; /* Graphite base */
-      --line: #1E293B; /* Borders/Lines */
-      --fg: #E8F2EE; /* Text Primary */
-      --muted: #93A1AF; /* Text Muted */
-      --primary: #00D58C; /* Mint */
-      --secondary: #F59E0B; /* Amber */
-      --info: #22D3EE; /* Cyan */
-      --error: #EF4444;
-      --success: #10B981;
-    }
+  body {
+    margin: 0;
+    line-height: inherit;
+  }
+  ... /* === Dark Mode UI Enhancements === */
+:root {
+  --bg: #0D1117;
+  --bg-alt: #0F141B;
+  --line: #1E293B;
+  --fg: #E8F2EE;
+  --muted: #9CA3AF;
+  --primary: #00D58C;
+  --accent: #22D3EE;
+  --error: #EF4444;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--fg);
+  font-family: 'Inter', system-ui, sans-serif;
+  margin: 0;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.container {
+  max-width: 960px;
+  margin: 3rem auto;
+  padding: 2rem;
+  background: var(--bg-alt);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+}
+
+input, textarea, select, button {
+  background: var(--bg);
+  color: var(--fg);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 14px;
+  width: 100%;
+  margin-bottom: 12px;
+}
+
+button {
+  background: var(--primary);
+  color: #000;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+button:hover {
+  background: var(--accent);
+  transform: translateY(-2px);
+}
+/* === End Dark Mode Enhancements === */
+
+</style>
 
     /* Reset and base styles */
     * {
