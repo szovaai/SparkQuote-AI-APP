@@ -3,12 +3,21 @@
   "version": "1.0.0",
   "private": true,
   "description": "AI-powered proposal generator",
+  "scripts": {
+    "build": "node esbuild.config.js"
+  },
   "dependencies": {
-    "@google/genai": "^1.25.0"
+    "@google/genai": "^1.25.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "use-debounce": "^10.0.6"
   },
   "devDependencies": {
     "@types/node": "^20.11.24",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
     "@vercel/node": "^3.0.22",
+    "esbuild": "^0.21.4",
     "typescript": "^5.3.3"
   }
 }
