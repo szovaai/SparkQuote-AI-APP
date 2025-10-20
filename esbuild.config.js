@@ -1,5 +1,5 @@
 const esbuild = require('esbuild');
-const fs = require('fs-extra');
+const fs = require('fs');
 const path = require('path');
 
 const outdir = 'dist';
@@ -7,7 +7,10 @@ const outdir = 'dist';
 async function build() {
     try {
         // Ensure the output directory is clean
-        fs.emptyDirSync(outdir);
+        if (fs.existsSync(outdir)) {
+            fs.rmSync(outdir, { recursive: true, force: true });
+        }
+        fs.mkdirSync(outdir);
 
         // Build the main JS bundle
         await esbuild.build({
@@ -24,7 +27,7 @@ async function build() {
         });
 
         // Copy the public HTML file to the output directory
-        fs.copySync('index.html', path.join(outdir, 'index.html'));
+        fs.copyFileSync('index.html', path.join(outdir, 'index.html'));
         
         console.log('Build successful!');
     } catch (e) {
