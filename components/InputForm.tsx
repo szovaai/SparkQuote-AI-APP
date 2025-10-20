@@ -116,6 +116,34 @@ const InputForm: React.FC<InputFormProps> = ({ formData, setFormData, onGenerate
     }));
   };
   
+    const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        if (file.size > 2 * 1024 * 1024) { // 2MB limit
+            addToast('Logo size should not exceed 2MB.', 'error');
+            return;
+        }
+        if (!['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml'].includes(file.type)) {
+            addToast('Invalid file type. Please use PNG, JPG, WEBP, or SVG.', 'error');
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            setFormData(prev => ({ ...prev, companyLogo: reader.result as string }));
+            addToast('Logo uploaded successfully!', 'success');
+        };
+        reader.onerror = () => {
+            addToast('Failed to read the logo file.', 'error');
+        }
+        reader.readAsDataURL(file);
+    };
+
+    const handleRemoveLogo = () => {
+        setFormData(prev => ({ ...prev, companyLogo: '' }));
+    };
+
   const nudge = (elementId: string, msg: string) => {
     const el = document.getElementById(elementId);
     if (el) {
@@ -242,7 +270,43 @@ const InputForm: React.FC<InputFormProps> = ({ formData, setFormData, onGenerate
         
         <Accordion title="Branding" dataId="branding">
             <InputField id="brand" name="brand" label="Company Name" placeholder="Your Company LLC" value={formData.brand} onChange={handleGeneralChange} tooltip="Your official company name as it should appear on the proposal."/>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            
+            <div className="mt-4">
+                <div className="flex items-center justify-between mb-1">
+                    <label className="block text-sm font-medium text-[var(--muted)]">Company Logo</label>
+                    <Tooltip text="Upload your company logo. Recommended: PNG or SVG with transparent background. Max size: 2MB." />
+                </div>
+                <div className="mt-2 flex items-center gap-4 p-3 bg-[var(--bg)] rounded-lg border border-[var(--line)]">
+                    <div className="w-16 h-16 bg-[var(--bg-alt)] rounded-md flex items-center justify-center overflow-hidden">
+                        {formData.companyLogo ? (
+                            <img src={formData.companyLogo} alt="Logo Preview" className="max-w-full max-h-full object-contain" />
+                        ) : (
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8 text-[var(--muted)]">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
+                            </svg>
+                        )}
+                    </div>
+                    <div className="flex-grow">
+                        <input
+                            type="file"
+                            id="logo-upload"
+                            className="hidden"
+                            accept="image/png, image/jpeg, image/webp, image/svg+xml"
+                            onChange={handleLogoUpload}
+                        />
+                        <label htmlFor="logo-upload" className="btn-secondary cursor-pointer text-sm">
+                            Upload Logo
+                        </label>
+                        {formData.companyLogo && (
+                            <button onClick={handleRemoveLogo} className="ml-2 text-xs text-[var(--muted)] hover:text-[var(--danger)] transition-colors">
+                                Remove
+                            </button>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
                 <InputField id="license" name="license" label="License #" placeholder="Your License Number" value={formData.license} onChange={handleGeneralChange} tooltip="Your official trade license number, if applicable."/>
                 <InputField id="proposalNumberPrefix" name="proposalNumberPrefix" label="Proposal # Prefix" placeholder="e.g., INV" value={formData.proposalNumberPrefix} onChange={handleGeneralChange} tooltip="The prefix for your automatically generated proposal numbers (e.g., TPS)."/>
             </div>
@@ -258,7 +322,7 @@ const InputForm: React.FC<InputFormProps> = ({ formData, setFormData, onGenerate
           {isLoading ? (
             <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-black"></div>
           ) : (
-            <><SparkleIcon /> Generate Invoice</>
+            <><SparkleIcon /> Generate Proposal</>
           )}
         </button>
         <div className="flex justify-between items-center mt-3">

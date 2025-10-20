@@ -43,17 +43,94 @@
   
   /* Print Styles */
   @media print {
-      html, body { background: #fff !important; color: #000 !important; font-size: 10pt; }
-      .print\:hidden { display: none !important; }
-      .print\:shadow-none { box-shadow: none !important; }
-      .print\:border-none { border: none !important; }
-      .print\:bg-white { background-color: #fff !important; }
-      .print\:my-0 { margin-top: 0 !important; margin-bottom: 0 !important; }
-      .print-footer { display: block !important; position: fixed; bottom: 0; width: 100%; text-align: right; font-size: 9pt; color: #666; }
-      @page { margin: 1in; }
+    html, body {
+        background: #fff !important;
+        color: #000 !important;
+        font-size: 10pt;
+        height: auto !important;
+        overflow: visible !important;
+    }
+
+    /* Hide the left input form column and other UI */
+    .print\:hidden,
+    main > section.glass {
+        display: none !important;
+    }
+
+    /* Reset layout for printing */
+    main {
+        display: block !important;
+        padding: 0 !important;
+        max-width: none !important;
+    }
+
+    .lg\:h-\[calc\(100vh-2rem\)\] {
+        height: auto !important;
+        overflow: visible !important;
+    }
+    
+    /* Remove padding around the proposal content */
+    .lg\:h-\[calc\(100vh-2rem\)\] .p-4,
+    .lg\:h-\[calc\(100vh-2rem\)\] .sm\:p-6,
+    .lg\:h-\[calc\(100vh-2rem\)\] .lg\:p-8 {
+        padding: 0 !important;
+    }
+
+    .proposal-preview {
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        background: transparent !important;
+    }
+    /* Enforce client-clean view for printing */
+    .proposal-preview .editor-note { display: none !important; }
+    .proposal-preview h2 { margin-top: 1.5rem !important; }
+    .proposal-preview h2:first-of-type { margin-top: 0 !important; }
+
+    /* Page break control */
+    .proposal-preview .break-inside-avoid,
+    table, .quote-totals {
+        page-break-inside: avoid;
+    }
+    h1, h2, h3, h4, h5 {
+        page-break-after: avoid;
+    }
+    .acceptance-section {
+        page-break-before: always;
+    }
+
+    /* Header and Footer Setup */
+    .print-header, .print-footer {
+        display: flex !important;
+        justify-content: space-between;
+        align-items: center;
+        position: fixed;
+        width: 100%;
+        font-size: 9pt;
+        color: #555;
+        padding: 0;
+        box-sizing: border-box;
+        left: 0;
+        background: #fff;
+    }
+    .print-header {
+        top: 0;
+        padding-bottom: 0.25in;
+        border-bottom: 1px solid #ddd;
+    }
+    .print-footer {
+        bottom: 0;
+        padding-top: 0.25in;
+        border-top: 1px solid #ddd;
+    }
+
+    @page {
+        margin: 1in;
+    }
   }
-  .print-footer { display: none; }
-  .print-footer .page-number::after { content: counter(page); }
+
+  .print-header, .print-footer { display: none; }
+  .print-footer .page-number::after { content: "Page " counter(page); }
   
   /* Toast Notifications */
   #toasts { position: fixed; right: 1rem; bottom: 5rem; z-index: 50; display: flex; flex-direction: column; gap: 0.5rem; }

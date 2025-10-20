@@ -15,6 +15,8 @@ import type {
 import { calculateQuote } from './utils/quoteCalculator';
 import {
   generateProposalContent,
+  generateUpsellSuggestions,
+  generatePackageComparison,
   generateFollowUpEmails,
   generateChangeOrder,
 } from './utils/gemini';
@@ -88,6 +90,7 @@ function App() {
   const [followUpEmails, setFollowUpEmails] = useState<FollowUpEmail[]>([]);
   const [changeOrder, setChangeOrder] = useState<ChangeOrder | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isRetrying, setIsRetrying] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saveStatus, setSaveStatus] = useState<
     'Saved' | 'Saving...' | 'Not Saved'
@@ -144,6 +147,7 @@ function App() {
 
   const handleGenerate = async () => {
     setIsLoading(true);
+    setIsRetrying(false);
     setError(null);
     setGeneratedContent(null);
     setFollowUpEmails([]);
@@ -151,21 +155,33 @@ function App() {
     setPackageComparison(null);
     setUpsellSuggestions([]);
     setGenerationTimestamp(null);
+    
+    const onRetryCallback = () => setIsRetrying(true);
 
     try {
-      const { generatedContent, upsellSuggestions, packageComparison } =
-        await generateProposalContent(
-          formData,
-          quotes,
-          selectedTrade,
-          selectedProject
-        );
-      setGeneratedContent(generatedContent);
+      const generationPromises = Promise.all([
+        generateProposalContent(formData, quotes, selectedTrade, selectedProject, onRetryCallback),
+        generateUpsellSuggestions(formData, quotes, selectedTrade, selectedProject, onRetryCallback),
+        generatePackageComparison(formData, quotes, selectedTrade, selectedProject, onRetryCallback),
+      ]);
+
+      const results = await generationPromises as [GeneratedContent, UpsellSuggestion[], PackageComparison];
+      
+      const [
+        fullGeneratedContent,
+        upsellSuggestions,
+        packageComparison,
+      ] = results;
+
+      if (!fullGeneratedContent || !upsellSuggestions || !packageComparison) {
+        throw new Error('The AI returned an incomplete response. Please try generating again.');
+      }
+      
+      setGeneratedContent(fullGeneratedContent);
       setUpsellSuggestions(upsellSuggestions);
       setPackageComparison(packageComparison);
       setGenerationTimestamp(Date.now());
       addToast('Proposal generated successfully!', 'success');
-
 
       // Also generate follow-up emails, using the 'better' quote as context
       if (quotes.better) {
@@ -177,12 +193,19 @@ function App() {
         setFollowUpEmails(emails);
       }
     } catch (err) {
-       const message = err instanceof Error ? err.message : 'An unknown error occurred.';
-      setError(message);
-      addToast(message, 'error');
+       const message = err instanceof Error ? err.message : 'An unknown error occurred during generation.';
+       if (err instanceof Error && err.message.includes('API key not valid')) {
+          const specificError = 'API Key is not valid. Please check your configuration.';
+          setError(specificError);
+          addToast(specificError, 'error');
+       } else {
+          setError(message);
+          addToast(message, 'error');
+       }
       console.error(err);
     } finally {
       setIsLoading(false);
+      setIsRetrying(false);
     }
   };
 
@@ -259,6 +282,7 @@ function App() {
             changeOrder={changeOrder}
             onGenerateChangeOrder={handleGenerateChangeOrder}
             isLoading={isLoading}
+            isRetrying={isRetrying}
             error={error}
             selectedProject={selectedProject}
           />

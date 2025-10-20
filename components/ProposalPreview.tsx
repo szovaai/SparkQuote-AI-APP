@@ -26,6 +26,7 @@ interface ProposalPreviewProps {
   changeOrder: ChangeOrder | null;
   onGenerateChangeOrder: (changeRequest: string) => void;
   isLoading: boolean;
+  isRetrying: boolean;
   error: string | null;
   selectedProject: string;
 }
@@ -38,12 +39,16 @@ const ScaleIcon = () => <svg xmlns="http://www.w3.org/2000/svg" fill="none" view
 const ArrowUpIcon = () => <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18 9 11.25l4.306 4.306a11.95 11.95 0 0 1 5.814-5.518l2.74-1.22m0 0-5.94-2.281m5.94 2.28-2.28 5.941" /></svg>;
 const MailIcon = () => <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" /></svg>;
 const PencilIcon = () => <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" /></svg>;
+const WarningIcon = (props: React.SVGProps<SVGSVGElement>) => <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" /></svg>;
+const ShieldIcon = (props: React.SVGProps<SVGSVGElement>) => <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.286Zm0 13.036h.008v.008H12v-.008Z" /></svg>;
 
-const Section: React.FC<{ title: string; children: React.ReactNode }> = ({
+
+const Section: React.FC<{ title: string; children: React.ReactNode, className?: string }> = ({
   title,
   children,
+  className,
 }) => (
-  <div className="mb-8 break-inside-avoid">
+  <div className={`mb-8 break-inside-avoid ${className || ''}`}>
     <h2 className="text-lg sm:text-xl font-bold border-b-2 border-[var(--proposal-primary)] pb-2 mb-4 text-[var(--proposal-primary)]">
       {title}
     </h2>
@@ -86,7 +91,7 @@ const LineItemsTable: React.FC<{ items: LineItem[]; currency: string }> = ({
 );
 
 const QuoteTotals: React.FC<{ quote: Quote }> = ({ quote }) => (
-  <div className="mt-6 ml-auto w-full max-w-xs text-sm">
+  <div className="mt-6 ml-auto w-full max-w-xs text-sm quote-totals">
     <div className="flex justify-between py-1 border-b border-[var(--line)]">
       <span>Subtotal</span>
       <span>{formatCurrency(quote.subTotal, quote.currency)}</span>
@@ -126,6 +131,7 @@ const ProposalPreview: React.FC<ProposalPreviewProps> = ({
   changeOrder,
   onGenerateChangeOrder,
   isLoading,
+  isRetrying,
   error,
   selectedProject,
 }) => {
@@ -142,6 +148,34 @@ const ProposalPreview: React.FC<ProposalPreviewProps> = ({
   const [isClientView, setIsClientView] = useState(false);
   const signaturePadRef = useRef<{ clear: () => void }>(null);
   const { addToast } = useToast();
+  const [loadingMessageIndex, setLoadingMessageIndex] = useState(0);
+
+  const loadingMessages = [
+    'Analyzing job details with our speed model...',
+    'Crafting a compelling cover letter...',
+    'Defining a clear scope of work...',
+    'Comparing package options and value...',
+    'Identifying valuable upsell opportunities...',
+    'Drafting professional terms and conditions...',
+    'Finalizing proposal...',
+  ];
+
+  const retryMessage = "Primary model is slow... switching to our power-model for you. This may take a moment.";
+
+  useEffect(() => {
+    let interval: number;
+    if (isLoading && !isRetrying) {
+      setLoadingMessageIndex(0); // Reset to first message on new generation
+      interval = window.setInterval(() => {
+        setLoadingMessageIndex(prevIndex => (prevIndex + 1) % loadingMessages.length);
+      }, 2500); // Change message every 2.5 seconds
+    }
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
+  }, [isLoading, isRetrying]);
 
 
   const { primaryColor, secondaryColor } = formData;
@@ -270,7 +304,7 @@ const ProposalPreview: React.FC<ProposalPreviewProps> = ({
       <div className="text-center p-10 border-2 border-dashed border-[var(--line)] rounded-lg bg-[var(--bg)]">
         <p className="text-lg font-semibold text-[var(--muted)]">{message}</p>
         <p className="text-sm text-[var(--muted)] mt-2">
-          {subtext || 'Click the "Generate Invoice" button to have the AI create this content for you.'}
+          {subtext || 'Click the "Generate Proposal" button to have the AI create this content for you.'}
         </p>
       </div>
     </Section>
@@ -298,7 +332,11 @@ const ProposalPreview: React.FC<ProposalPreviewProps> = ({
     return <>
       <header className="flex flex-col sm:flex-row justify-between items-start mb-12 gap-4">
         <div>
-            <h1 className="text-2xl sm:text-3xl font-bold">{formData.brand}</h1>
+            {formData.companyLogo ? (
+                <img src={formData.companyLogo} alt={`${formData.brand} Logo`} className="max-h-20 max-w-xs object-contain mb-2" />
+            ) : (
+                <h1 className="text-2xl sm:text-3xl font-bold">{formData.brand}</h1>
+            )}
             <p className="text-[var(--muted)]">License #: {formData.license}</p>
         </div>
         <div className="text-left sm:text-right w-full sm:w-auto">
@@ -389,6 +427,29 @@ const ProposalPreview: React.FC<ProposalPreviewProps> = ({
           ))}
         </ul>
       </Section>
+        {generatedContent?.risk_assessment && generatedContent.risk_assessment.length > 0 && (
+          <Section title="Project Considerations & Risk Mitigation">
+            <div className="space-y-4">
+              {generatedContent.risk_assessment.map((item, index) => (
+                <div key={index} className="p-4 border border-[var(--line)] rounded-md bg-[var(--bg)]">
+                  <div className="flex items-start">
+                     <WarningIcon className="w-5 h-5 mr-3 mt-1 flex-shrink-0 text-amber-400" />
+                     <div>
+                        <h4 className="font-bold">Risk: {item.risk}</h4>
+                     </div>
+                  </div>
+                  <div className="flex items-start mt-3 pt-3 border-t border-[var(--line)] border-dashed">
+                    <ShieldIcon className="w-5 h-5 mr-3 mt-1 flex-shrink-0 text-green-400" />
+                    <div>
+                      <h4 className="font-bold">Mitigation Strategy</h4>
+                      <p className="text-sm text-[var(--muted)]">{item.mitigation}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Section>
+        )}
       <Section title="Warranty">{generatedContent!.warranty}</Section>
       <Section title="Terms & Conditions">
         <ul className="list-decimal pl-5 space-y-2">
@@ -398,7 +459,7 @@ const ProposalPreview: React.FC<ProposalPreviewProps> = ({
         </ul>
       </Section>
 
-      <Section title="Acceptance">
+      <Section title="Acceptance" className="acceptance-section">
         <p>{generatedContent!.acceptance_block}</p>
         
         {currentQuote && (
@@ -685,7 +746,13 @@ const ProposalPreview: React.FC<ProposalPreviewProps> = ({
               {isLoading && (
                 <div className="flex flex-col items-center justify-center h-96">
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--primary)]"></div>
-                  <p className="mt-4 text-[var(--muted)]">Generating content...</p>
+                   {isRetrying ? (
+                        <p className="mt-4 text-[var(--muted)] text-center fade-in">{retryMessage}</p>
+                    ) : (
+                        <p key={loadingMessageIndex} className="mt-4 text-[var(--muted)] text-center fade-in">
+                            {loadingMessages[loadingMessageIndex]}
+                        </p>
+                    )}
                 </div>
               )}
               {error && (
@@ -705,10 +772,19 @@ const ProposalPreview: React.FC<ProposalPreviewProps> = ({
               )}
             </div>
         </div>
-        <div className="print-footer">
-            <span>{formData.brand} | License #: {formData.license}</span>
-            <span className="page-number"></span>
-        </div>
+      </div>
+      {/* Print-only elements */}
+      <div className="print-header">
+        {formData.companyLogo ? (
+            <img src={formData.companyLogo} alt={`${formData.brand} Logo`} style={{ maxHeight: '40px', maxWidth: '150px', objectFit: 'contain' }} />
+        ) : (
+            <span className="font-bold">{formData.brand} Proposal</span>
+        )}
+        <span>{selectedProject}</span>
+      </div>
+      <div className="print-footer">
+          <span>{formData.brand} | License #: {formData.license}</span>
+          <span className="page-number"></span>
       </div>
     </div>
   );

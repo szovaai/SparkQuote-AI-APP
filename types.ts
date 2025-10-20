@@ -1,3 +1,4 @@
+// New partial types for generation
 export type PackageTier = 'good' | 'better' | 'best';
 
 export interface PackageDetails {
@@ -28,6 +29,7 @@ export interface FormData {
   brand: string;
   license: string;
   proposalNumberPrefix: string;
+  companyLogo?: string;
   attachments?: string[];
   primaryColor: string;
   secondaryColor: string;
@@ -73,6 +75,7 @@ export interface GeneratedContent {
   warranty: string;
   terms_conditions: string[];
   acceptance_block: string;
+  risk_assessment?: { risk: string; mitigation: string; }[];
 }
 
 export interface UpsellSuggestion {
