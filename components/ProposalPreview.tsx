@@ -690,7 +690,7 @@ const ProposalPreview: React.FC<ProposalPreviewProps> = ({
               </button>
             </div>
 
-            <div className="max-w-4xl mx-auto my-8 print:my-0 bg-[var(--bg-alt)] print:bg-white shadow-lg print:shadow-none rounded-lg p-6 sm:p-8 md:p-12 print:border-none border border-[var(--line)]">
+            <div className="glass card p-6 sm:p-8 md:p-12 print:shadow-none print:border-none print:bg-white">
               {isLoading && (
                 <div className="flex flex-col items-center justify-center h-96">
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--primary)]"></div>

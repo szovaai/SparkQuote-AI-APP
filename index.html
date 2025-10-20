@@ -1,232 +1,73 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>SparkQuote AI</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SparkQuote AI</title>
+<meta name="color-scheme" content="dark light">
 
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script type="importmap">
+<!-- Tailwind (utility sprinkles only) -->
+<script src="https://cdn.tailwindcss.com"></script>
+
+<style>
+  /* ===== Theme ===== */
+  :root{
+    --bg:#0D1117; --bg-elev:#0F141B; --line:#1E293B; --fg:#E8F2EE; --muted:#9CA3AF;
+    --primary:#00D58C; --accent:#22D3EE; --danger:#EF4444; --info: #3B82F6;
+    --bg-alt: var(--bg-elev);
+    --proposal-primary: var(--primary);
+    --proposal-secondary: var(--accent);
+  }
+  :root.light{
+    --bg:#ffffff; --bg-elev:#f8fafc; --line:#e2e8f0; --fg:#0b1220; --muted:#475569;
+    --primary:#16a34a; --accent:#0ea5e9; --danger:#dc2626; --info: #2563EB;
+  }
+  html,body, #root{margin:0;padding:0;background:var(--bg);color:var(--fg);
+    font-family:Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+  }
+  .glass{background:rgba(255,255,255,.03);border:1px solid var(--line);backdrop-filter:blur(8px);border-radius:14px}
+  .card{box-shadow:0 10px 30px rgba(0,0,0,.25)}
+  .btn-primary{background:linear-gradient(135deg,var(--primary),var(--accent));color:#0B0F14;
+    border:0;border-radius:12px;padding:.65rem .9rem;font-weight:700; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;}
+  .btn-primary:hover{transform:translateY(-1px)} .btn-primary:active{transform:translateY(0)}
+  .btn-primary:disabled { background: var(--muted); opacity: 0.7; cursor: not-allowed; }
+  .btn-secondary{background:transparent;border:1px solid var(--line);border-radius:10px;color:var(--fg);padding:.55rem .8rem}
+  .input, select, textarea{width:100%;background:#0B0F14;color:var(--fg);border:1px solid var(--line);
+    border-radius:10px;padding:.6rem .75rem}
+  .input:focus, select:focus, textarea:focus{outline:0;border-color:var(--primary);
+    box-shadow:0 0 0 3px rgba(0,213,140,.25)}
+  .badge{font-size:.75rem;color:var(--muted);border:1px dashed var(--line);border-radius:999px;padding:.25rem .55rem}
+  .section-title { font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); font-weight: 600; }
+  ::-webkit-scrollbar{width:8px;height:8px} ::-webkit-scrollbar-thumb{background:var(--line);border-radius:10px}
+  
+  /* Print Styles */
+  @media print {
+      html, body { background: #fff !important; color: #000 !important; font-size: 10pt; }
+      .print\:hidden { display: none !important; }
+      .print\:shadow-none { box-shadow: none !important; }
+      .print\:border-none { border: none !important; }
+      .print\:bg-white { background-color: #fff !important; }
+      .print\:my-0 { margin-top: 0 !important; margin-bottom: 0 !important; }
+      .print-footer { display: block !important; position: fixed; bottom: 0; width: 100%; text-align: right; font-size: 9pt; color: #666; }
+      @page { margin: 1in; }
+  }
+  .print-footer { display: none; }
+  .print-footer .page-number::after { content: counter(page); }
+
+</style>
+<script type="importmap">
 {
   "imports": {
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
     "react": "https://aistudiocdn.com/react@^19.2.0",
     "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react-dom/client": "https://aistudiocdn.com/react-dom@^19.2.0/client",
     "@google/genai": "https://aistudiocdn.com/@google/genai@^1.25.0",
     "use-debounce": "https://aistudiocdn.com/use-debounce@^10.0.6"
   }
 }
 </script>
-
-  <style>
-    /* Global Styles & Design System */
-    :root {
-      --bg: #0F141B; /* Card panels */
-      --bg-alt: #0D1117; /* Graphite base */
-      --line: #1E293B; /* Borders/Lines */
-      --fg: #E8F2EE; /* Text Primary */
-      --muted: #93A1AF; /* Text Muted */
-      --primary: #00D58C; /* Mint */
-      --secondary: #F59E0B; /* Amber */
-      --info: #22D3EE; /* Cyan */
-      --error: #EF4444;
-      --success: #10B981;
-    }
-
-    /* Reset and base styles */
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-    
-    html {
-      /* Slightly reduce base font size to make UI more compact */
-      font-size: 15px; 
-    }
-
-    body {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
-      background-color: var(--bg-alt);
-      color: var(--fg);
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-    }
-
-    /* Custom utility classes to be used with Tailwind */
-    .input {
-      width: 100%;
-      padding: 10px 12px;
-      border: 1px solid var(--line);
-      background: var(--bg-alt);
-      color: var(--fg);
-      border-radius: 8px;
-      transition: border-color 0.2s, box-shadow 0.2s;
-    }
-    .input:focus {
-      outline: none;
-      border-color: var(--primary);
-      box-shadow: 0 0 0 2px rgba(0, 213, 140, 0.2);
-    }
-    
-    .btn-primary {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 10px 14px;
-      border: 0;
-      border-radius: 8px;
-      background-image: linear-gradient(135deg, var(--primary), var(--info));
-      color: var(--bg-alt);
-      font-weight: 700;
-      cursor: pointer;
-      transition: transform 0.2s ease, opacity 0.2s;
-    }
-    .btn-primary:hover:not(:disabled) {
-      transform: scale(1.03);
-    }
-    .btn-primary:disabled {
-      cursor: not-allowed;
-      opacity: 0.6;
-    }
-    
-    .btn-secondary {
-       padding: 8px 12px;
-       border: 1px solid var(--line);
-       border-radius: 8px;
-       background: transparent;
-       color: var(--muted);
-       font-weight: 600;
-       cursor: pointer;
-       transition: background-color 0.2s, color 0.2s;
-    }
-    .btn-secondary:hover {
-       background-color: var(--line);
-       color: var(--fg);
-    }
-
-    .section-title {
-      font-size: 0.9rem;
-      text-transform: uppercase;
-      color: var(--muted);
-      letter-spacing: 0.5px;
-      font-weight: 600;
-    }
-
-    /* Custom Scrollbar Styling */
-    ::-webkit-scrollbar {
-      width: 8px;
-      height: 8px;
-    }
-
-    ::-webkit-scrollbar-track {
-      background: transparent; /* Make track invisible */
-    }
-
-    ::-webkit-scrollbar-thumb {
-      background-color: var(--line); /* Use the subtle border color */
-      border-radius: 10px;
-    }
-
-    ::-webkit-scrollbar-thumb:hover {
-      background-color: var(--muted); /* Lighter color on hover */
-    }
-    
-    .print-footer {
-      display: none;
-    }
-
-
-    /* Print-specific styles for PDF export */
-    @media print {
-      @page {
-        size: A4;
-        margin: 0.75in;
-      }
-      
-      html, body {
-        background-color: #fff !important;
-        color: #000 !important;
-        font-family: 'Georgia', 'Times New Roman', Times, serif;
-        font-size: 11pt;
-      }
-      
-      aside, .print\:hidden {
-        display: none !important;
-      }
-
-      main {
-        width: 100%;
-        height: auto;
-        overflow: visible;
-        padding: 0;
-        /* Add padding to body to avoid content overlapping with fixed footer */
-        padding-bottom: 1in; 
-      }
-      
-      .print\:shadow-none { box-shadow: none !important; }
-      .print\:border-none { border: none !important; }
-      .print\:my-0 { margin-top: 0 !important; margin-bottom: 0 !important; }
-      
-      /* The footer that will be visible on each page */
-      .print-footer {
-        position: fixed;
-        bottom: 0;
-        left: 0.75in;
-        right: 0.75in;
-        height: 0.5in;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        font-size: 9pt;
-        color: #666;
-        border-top: 1px solid #ccc;
-      }
-
-      /* Page numbering logic */
-      body {
-        counter-reset: page;
-      }
-      .page-number::after {
-        counter-increment: page;
-        content: "Page " counter(page);
-      }
-
-      /* General layout improvements for print */
-      h1, h2, h3, h4, table, ul, ol {
-        color: #000 !important;
-        break-inside: avoid;
-      }
-      
-      h2 {
-        break-after: avoid;
-      }
-      
-      a {
-          color: #000 !important;
-          text-decoration: none !important;
-      }
-      
-      .prose {
-        font-size: 11pt;
-      }
-
-      .references-section {
-        page-break-before: always;
-        padding-top: 1rem;
-      }
-      .references-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 1rem;
-      }
-      .reference-image-container img {
-        width: 100%;
-        border: 1px solid #eee;
-        border-radius: 4px;
-      }
-    }
-  </style>
 </head>
 <body>
   <noscript>You need to enable JavaScript to run this app.</noscript>

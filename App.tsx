@@ -188,41 +188,47 @@ function App() {
   };
 
   return (
-    <div className="flex flex-col lg:flex-row min-h-screen bg-[var(--bg)] text-[var(--fg)] font-sans">
-      <aside className="w-full lg:w-[480px] lg:flex-shrink-0 lg:h-screen p-4 md:p-6 border-b lg:border-b-0 lg:border-r border-[var(--line)] flex flex-col">
-        <header className="mb-6">
-          <SparkQuoteLogo />
-          <h1 className="text-xl sm:text-2xl font-bold">SparkQuote AI</h1>
-          <p className="text-[var(--muted)]">AI-Powered Proposal Generator</p>
-        </header>
-        <InputForm
-          formData={formData}
-          setFormData={setFormData}
-          onGenerate={handleGenerate}
-          isLoading={isLoading}
-          selectedTrade={selectedTrade}
-          setSelectedTrade={setSelectedTrade}
-          selectedProject={selectedProject}
-          setSelectedProject={setSelectedProject}
-          saveStatus={saveStatus}
-        />
-      </aside>
-      <main className="flex-1 lg:h-screen lg:overflow-y-auto">
-        <ProposalPreview
-          formData={formData}
-          setFormData={setFormData}
-          quotes={quotes}
-          generatedContent={generatedContent}
-          generationTimestamp={generationTimestamp}
-          upsellSuggestions={upsellSuggestions}
-          packageComparison={packageComparison}
-          followUpEmails={followUpEmails}
-          changeOrder={changeOrder}
-          onGenerateChangeOrder={handleGenerateChangeOrder}
-          isLoading={isLoading}
-          error={error}
-          selectedProject={selectedProject}
-        />
+    <div className="min-h-screen bg-[var(--bg)] text-[var(--fg)] font-sans">
+      <main className="grid lg:grid-cols-[480px,1fr] gap-4 mx-auto max-w-7xl p-4">
+        
+        {/* Left: Builder */}
+        <section className="glass card p-4 md:p-6 flex flex-col h-fit">
+          <header className="mb-6">
+            <SparkQuoteLogo />
+            <h1 className="text-xl sm:text-2xl font-bold">SparkQuote AI</h1>
+            <p className="text-[var(--muted)]">AI-Powered Proposal Generator</p>
+          </header>
+          <InputForm
+            formData={formData}
+            setFormData={setFormData}
+            onGenerate={handleGenerate}
+            isLoading={isLoading}
+            selectedTrade={selectedTrade}
+            setSelectedTrade={setSelectedTrade}
+            selectedProject={selectedProject}
+            setSelectedProject={setSelectedProject}
+            saveStatus={saveStatus}
+          />
+        </section>
+
+        {/* Right: Preview & actions. This column will scroll */}
+        <div className="lg:h-[calc(100vh-2rem)] lg:overflow-y-auto">
+          <ProposalPreview
+            formData={formData}
+            setFormData={setFormData}
+            quotes={quotes}
+            generatedContent={generatedContent}
+            generationTimestamp={generationTimestamp}
+            upsellSuggestions={upsellSuggestions}
+            packageComparison={packageComparison}
+            followUpEmails={followUpEmails}
+            changeOrder={changeOrder}
+            onGenerateChangeOrder={handleGenerateChangeOrder}
+            isLoading={isLoading}
+            error={error}
+            selectedProject={selectedProject}
+          />
+        </div>
       </main>
     </div>
   );

@@ -3,8 +3,6 @@
 import { GoogleGenAI, Type } from '@google/genai';
 import type { FormData, Quote, PackageTier, GeneratedContent, UpsellSuggestion, PackageComparison, FollowUpEmail, ChangeOrder } from '../types';
 
-// Per guidelines, initialize AI with API key from environment variables.
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 const model = 'gemini-2.5-flash';
 
 const buildProposalGenerationPrompt = (
@@ -122,6 +120,8 @@ export const generateProposalContent = async (
     upsellSuggestions: UpsellSuggestion[];
     packageComparison: PackageComparison;
 }> => {
+    // Per guidelines, initialize AI with API key from environment variables.
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const prompt = buildProposalGenerationPrompt(formData, quotes, selectedTrade, selectedProject);
 
     const responseSchema = {
@@ -215,6 +215,8 @@ Return ONLY a single, valid JSON array of objects, each with "subject", "body", 
 `;
 
 export const generateFollowUpEmails = async (formData: FormData, quote: Quote, selectedProject: string): Promise<FollowUpEmail[]> => {
+    // Per guidelines, initialize AI with API key from environment variables.
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const prompt = buildFollowUpPrompt(formData, quote, selectedProject);
 
     const responseSchema = {
@@ -283,6 +285,8 @@ Return ONLY a single, valid JSON object. Do not include any text, markdown, or e
 `;
 
 export const generateChangeOrder = async (changeRequest: string, formData: FormData, quote: Quote, selectedProject: string): Promise<ChangeOrder> => {
+    // Per guidelines, initialize AI with API key from environment variables.
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const prompt = buildChangeOrderPrompt(changeRequest, formData, quote, selectedProject);
 
     const responseSchema = {
