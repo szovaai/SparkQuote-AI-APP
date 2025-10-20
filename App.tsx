@@ -21,10 +21,29 @@ import {
 import { PRESETS } from './data/presets';
 import { useToast } from './context/ToastContext';
 
-
 const initialTrade = 'Electrical';
 const initialProject = 'Panel Upgrade (200A)';
-const initialFormData = PRESETS[initialTrade].jobs[initialProject];
+
+// Robustly get initial form data, with a fallback to prevent startup crashes.
+const getInitialFormData = (): FormData => {
+  try {
+    const tradeData = PRESETS[initialTrade];
+    const projectData = tradeData?.jobs?.[initialProject];
+    if (projectData) {
+      return projectData;
+    }
+  } catch (e) {
+    console.error("Could not load default preset, falling back.", e);
+  }
+  
+  // Fallback to the very first available preset if the default is not found
+  const firstTrade = Object.keys(PRESETS)[0];
+  const firstProject = Object.keys(PRESETS[firstTrade].jobs)[0];
+  return PRESETS[firstTrade].jobs[firstProject];
+};
+
+const initialFormData = getInitialFormData();
+
 
 const SparkQuoteLogo = () => (
     <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="mb-2">
@@ -194,6 +213,13 @@ function App() {
       setIsLoading(false);
     }
   };
+  
+  const handleQuickGenerate = () => {
+    const mainGenBtn = document.getElementById('generateBtn');
+    if (mainGenBtn) {
+        mainGenBtn.click();
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[var(--bg)] text-[var(--fg)] font-sans">
@@ -242,20 +268,10 @@ function App() {
       {/* Sticky action strip on mobile */}
       <div className="print:hidden fixed inset-x-0 bottom-3 px-3 md:hidden" style={{pointerEvents:'none'}}>
         <div className="glass card flex gap-2 p-2 justify-between" style={{pointerEvents:'auto'}}>
-          <button id="quickGen" className="btn-primary flex-1">Generate</button>
+          <button id="quickGen" className="btn-primary flex-1" onClick={handleQuickGenerate}>Generate</button>
           <button onClick={() => window.print()} className="btn-secondary">PDF</button>
         </div>
       </div>
-       <script dangerouslySetInnerHTML={{ __html: `
-        const quickGenBtn = document.getElementById('quickGen');
-        if (quickGenBtn) {
-            quickGenBtn.onclick = () => {
-                const mainGenBtn = document.getElementById('generateBtn');
-                if (mainGenBtn) mainGenBtn.click();
-            }
-        }
-    `}} />
-
     </div>
   );
 }
