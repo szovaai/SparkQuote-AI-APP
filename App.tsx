@@ -78,24 +78,6 @@ function App() {
   );
   const { addToast } = useToast();
 
-  // Critical asset checks on startup
-  useEffect(() => {
-    const criticalChecks = async () => {
-        try {
-            const presetsResponse = await fetch('/presets.json');
-            if (!presetsResponse.ok) {
-                throw new Error('Could not load presets.json. Ensure it is in the public folder.');
-            }
-        } catch (err) {
-            const message = err instanceof Error ? err.message : 'A network error occurred.';
-            setError(message);
-            addToast(message, 'error');
-        }
-    };
-    criticalChecks();
-  }, [addToast]);
-
-
   // Load preset when trade/project changes
   useEffect(() => {
     if (selectedTrade && selectedProject) {
