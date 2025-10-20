@@ -19,6 +19,8 @@ import {
   generateChangeOrder,
 } from './utils/gemini';
 import { PRESETS } from './data/presets';
+import { useToast } from './context/ToastContext';
+
 
 const initialTrade = 'Electrical';
 const initialProject = 'Panel Upgrade (200A)';
@@ -74,6 +76,25 @@ function App() {
   const [generationTimestamp, setGenerationTimestamp] = useState<number | null>(
     null
   );
+  const { addToast } = useToast();
+
+  // Critical asset checks on startup
+  useEffect(() => {
+    const criticalChecks = async () => {
+        try {
+            const presetsResponse = await fetch('/presets.json');
+            if (!presetsResponse.ok) {
+                throw new Error('Could not load presets.json. Ensure it is in the public folder.');
+            }
+        } catch (err) {
+            const message = err instanceof Error ? err.message : 'A network error occurred.';
+            setError(message);
+            addToast(message, 'error');
+        }
+    };
+    criticalChecks();
+  }, [addToast]);
+
 
   // Load preset when trade/project changes
   useEffect(() => {
@@ -142,6 +163,8 @@ function App() {
       setUpsellSuggestions(upsellSuggestions);
       setPackageComparison(packageComparison);
       setGenerationTimestamp(Date.now());
+      addToast('Proposal generated successfully!', 'success');
+
 
       // Also generate follow-up emails, using the 'better' quote as context
       if (quotes.better) {
@@ -153,9 +176,9 @@ function App() {
         setFollowUpEmails(emails);
       }
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : 'An unknown error occurred.'
-      );
+       const message = err instanceof Error ? err.message : 'An unknown error occurred.';
+      setError(message);
+      addToast(message, 'error');
       console.error(err);
     } finally {
       setIsLoading(false);
@@ -164,7 +187,9 @@ function App() {
 
   const handleGenerateChangeOrder = async (changeRequest: string) => {
     if (!quotes.better) {
-      setError('Cannot generate a change order without a base quote.');
+      const message = 'Cannot generate a change order without a base quote.';
+      setError(message);
+      addToast(message, 'error');
       return;
     }
     setIsLoading(true);
@@ -177,10 +202,11 @@ function App() {
         selectedProject
       );
       setChangeOrder(order);
+      addToast('Change order generated!', 'success');
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : 'Failed to generate change order.'
-      );
+      const message = err instanceof Error ? err.message : 'Failed to generate change order.';
+      setError(message);
+      addToast(message, 'error');
       console.error(err);
     } finally {
       setIsLoading(false);
@@ -230,6 +256,24 @@ function App() {
           />
         </div>
       </main>
+      
+      {/* Sticky action strip on mobile */}
+      <div className="print:hidden fixed inset-x-0 bottom-3 px-3 md:hidden" style={{pointerEvents:'none'}}>
+        <div className="glass card flex gap-2 p-2 justify-between" style={{pointerEvents:'auto'}}>
+          <button id="quickGen" className="btn-primary flex-1">Generate</button>
+          <button onClick={() => window.print()} className="btn-secondary">PDF</button>
+        </div>
+      </div>
+       <script dangerouslySetInnerHTML={{ __html: `
+        const quickGenBtn = document.getElementById('quickGen');
+        if (quickGenBtn) {
+            quickGenBtn.onclick = () => {
+                const mainGenBtn = document.getElementById('generateBtn');
+                if (mainGenBtn) mainGenBtn.click();
+            }
+        }
+    `}} />
+
     </div>
   );
 }

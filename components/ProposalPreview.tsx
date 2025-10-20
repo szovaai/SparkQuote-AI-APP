@@ -12,6 +12,7 @@ import type {
 } from '../types';
 import { formatCurrency } from '../utils/quoteCalculator';
 import SignaturePad from './SignaturePad';
+import { useToast } from '../context/ToastContext';
 
 interface ProposalPreviewProps {
   formData: FormData;
@@ -37,20 +38,6 @@ const ScaleIcon = () => <svg xmlns="http://www.w3.org/2000/svg" fill="none" view
 const ArrowUpIcon = () => <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18 9 11.25l4.306 4.306a11.95 11.95 0 0 1 5.814-5.518l2.74-1.22m0 0-5.94-2.281m5.94 2.28-2.28 5.941" /></svg>;
 const MailIcon = () => <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" /></svg>;
 const PencilIcon = () => <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" /></svg>;
-const SparkQuoteLogo = () => (
-    <svg width="40" height="40" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-            <linearGradient id="logoGradient" x1="4" y1="4" x2="44" y2="44" gradientUnits="userSpaceOnUse">
-                <stop stopColor="var(--proposal-primary, var(--primary))" />
-                <stop offset="1" stopColor="var(--proposal-secondary, var(--info))" />
-            </linearGradient>
-        </defs>
-        <path d="M24 4C12.95 4 4 12.95 4 24C4 35.05 12.95 44 24 44C35.05 44 44 35.05 44 24C44 12.95 35.05 4 24 4Z" fill="url(#logoGradient)" />
-        <path d="M22.53 15.5L16.5 24.5H25.5L24.47 20.5H29.5L22.53 15.5Z" fill="white" fillOpacity="0.9" />
-        <path d="M25.47 32.5L31.5 23.5H22.5L23.53 27.5H18.5L25.47 32.5Z" fill="white" fillOpacity="0.9" />
-    </svg>
-);
-
 
 const Section: React.FC<{ title: string; children: React.ReactNode }> = ({
   title,
@@ -150,10 +137,12 @@ const ProposalPreview: React.FC<ProposalPreviewProps> = ({
   const [acceptanceDate, setAcceptanceDate] = useState<Date | null>(null);
   const [changeRequest, setChangeRequest] = useState('');
   const [checkedUpsells, setCheckedUpsells] = useState<string[]>([]);
-  const [copiedEmailIndex, setCopiedEmailIndex] = useState<number | null>(null);
   const [timeLeft, setTimeLeft] = useState('');
   const [badgeColor, setBadgeColor] = useState('var(--muted)');
+  const [isClientView, setIsClientView] = useState(false);
   const signaturePadRef = useRef<{ clear: () => void }>(null);
+  const { addToast } = useToast();
+
 
   const { primaryColor, secondaryColor } = formData;
   const proposalStyles = {
@@ -179,7 +168,7 @@ const ProposalPreview: React.FC<ProposalPreviewProps> = ({
 
         if (diff <= 0) {
             setTimeLeft('Expired');
-            setBadgeColor('var(--error)');
+            setBadgeColor('var(--danger)');
             clearInterval(interval);
             return;
         }
@@ -187,8 +176,8 @@ const ProposalPreview: React.FC<ProposalPreviewProps> = ({
         const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
         setTimeLeft(`Valid for ${days} more day${days > 1 ? 's' : ''}`);
         
-        if (days <= 2) setBadgeColor('var(--error)');
-        else if (days <= 5) setBadgeColor('var(--secondary)');
+        if (days <= 2) setBadgeColor('var(--danger)');
+        else if (days <= 5) setBadgeColor('var(--accent)');
         else setBadgeColor('var(--muted)');
     };
 
@@ -228,6 +217,7 @@ const ProposalPreview: React.FC<ProposalPreviewProps> = ({
     URL.revokeObjectURL(a.href);
 
     setIsAccepted(true);
+    addToast('Proposal Accepted! Receipt downloaded.', 'success');
   };
 
   const handleUpsellToggle = (isChecked: boolean, lineItem: string) => {
@@ -257,12 +247,12 @@ const ProposalPreview: React.FC<ProposalPreviewProps> = ({
     }));
   };
 
-  const handleCopyEmail = (email: FollowUpEmail, index: number) => {
+  const handleCopyEmail = (email: FollowUpEmail) => {
     const emailText = `Subject: ${email.subject}\n\n${email.body}`;
     navigator.clipboard.writeText(emailText).then(() => {
-        setCopiedEmailIndex(index);
-        setTimeout(() => setCopiedEmailIndex(null), 2500);
+        addToast('Email copied to clipboard!', 'success');
     }).catch(err => {
+        addToast('Failed to copy email.', 'error');
         console.error('Failed to copy text: ', err);
     });
   };
@@ -307,15 +297,12 @@ const ProposalPreview: React.FC<ProposalPreviewProps> = ({
 
     return <>
       <header className="flex flex-col sm:flex-row justify-between items-start mb-12 gap-4">
-        <div className="flex items-center gap-3">
-          <SparkQuoteLogo />
-          <div>
+        <div>
             <h1 className="text-2xl sm:text-3xl font-bold">{formData.brand}</h1>
             <p className="text-[var(--muted)]">License #: {formData.license}</p>
-          </div>
         </div>
         <div className="text-left sm:text-right w-full sm:w-auto">
-          <h2 className="text-xl sm:text-2xl font-bold">Proposal</h2>
+          <h2 className="text-xl sm:text-2xl font-bold text-[var(--proposal-primary)]">Proposal</h2>
           <p className="text-[var(--muted)]">
             #
             {`${formData.proposalNumberPrefix}-${String(
@@ -542,10 +529,10 @@ const ProposalPreview: React.FC<ProposalPreviewProps> = ({
                         <div className="flex items-center gap-4">
                             <span className="text-xs font-bold text-[var(--muted)]">Send on Day +{email.send_after_days}</span>
                              <button 
-                                onClick={() => handleCopyEmail(email, i)} 
+                                onClick={() => handleCopyEmail(email)} 
                                 className="btn-secondary opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity text-xs"
                             >
-                                {copiedEmailIndex === i ? 'Copied!' : 'Copy'}
+                                Copy
                             </button>
                         </div>
                     </div>
@@ -684,13 +671,17 @@ const ProposalPreview: React.FC<ProposalPreviewProps> = ({
       {/* Main Content Area */}
       <div className="flex-1 overflow-y-auto">
         <div className="p-4 sm:p-6 lg:p-8">
-            <div className="flex justify-end mb-4 print:hidden">
+            <div className="flex justify-between items-center mb-4 print:hidden">
+                <div className="flex items-center gap-2">
+                    <input type="checkbox" id="clientViewToggle" checked={isClientView} onChange={(e) => setIsClientView(e.target.checked)} />
+                    <label htmlFor="clientViewToggle" className="text-sm text-[var(--muted)]">Client View</label>
+                </div>
               <button onClick={() => window.print()} className="btn-secondary">
                 Print/PDF
               </button>
             </div>
 
-            <div className="glass card p-6 sm:p-8 md:p-12 print:shadow-none print:border-none print:bg-white">
+            <div className={`proposal-preview glass card p-6 sm:p-8 md:p-12 print:shadow-none print:border-none print:bg-white ${isClientView ? 'client-clean' : ''}`}>
               {isLoading && (
                 <div className="flex flex-col items-center justify-center h-96">
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--primary)]"></div>
@@ -705,11 +696,11 @@ const ProposalPreview: React.FC<ProposalPreviewProps> = ({
               )}
               {!isLoading && !error && (
                 <>
-                  {activeTab === 'proposal' && (!generatedContent ? <ContentPlaceholder title="Proposal Preview" message="Proposal content will appear here." /> : renderProposal())}
-                  {activeTab === 'comparison' && (!packageComparison ? <ContentPlaceholder title="Package Comparison" message="AI-generated package comparison will appear here." /> : renderComparison())}
-                  {activeTab === 'upsells' && (upsellSuggestions.length === 0 ? <ContentPlaceholder title="Suggested Upsells" message="AI-generated upsell suggestions will appear here." /> : renderUpsells())}
-                  {activeTab === 'followups' && (followUpEmails.length === 0 ? <ContentPlaceholder title="Follow-up Emails" message="AI-generated follow-up email templates will appear here." /> : renderFollowUps())}
-                  {activeTab === 'changeorder' && renderChangeOrder()}
+                  {activeTab === 'proposal' && (!generatedContent ? <ContentPlaceholder title="Proposal Preview" message="Proposal content will appear here." /> : <div className="fade-in">{renderProposal()}</div>)}
+                  {activeTab === 'comparison' && (!packageComparison ? <ContentPlaceholder title="Package Comparison" message="AI-generated package comparison will appear here." /> : <div className="fade-in">{renderComparison()}</div>)}
+                  {activeTab === 'upsells' && (upsellSuggestions.length === 0 ? <ContentPlaceholder title="Suggested Upsells" message="AI-generated upsell suggestions will appear here." /> : <div className="fade-in">{renderUpsells()}</div>)}
+                  {activeTab === 'followups' && (followUpEmails.length === 0 ? <ContentPlaceholder title="Follow-up Emails" message="AI-generated follow-up email templates will appear here." /> : <div className="fade-in">{renderFollowUps()}</div>)}
+                  {activeTab === 'changeorder' && <div className="fade-in">{renderChangeOrder()}</div>}
                 </>
               )}
             </div>

@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import type { FormData, PackageTier } from '../types';
 import Accordion from './Accordion';
 import { PRESETS } from '../data/presets';
+import { useToast } from '../context/ToastContext';
+
 
 interface InputFormProps {
   formData: FormData;
@@ -63,7 +65,7 @@ const InputForm: React.FC<InputFormProps> = ({ formData, setFormData, onGenerate
   const [attachmentInput, setAttachmentInput] = useState('');
   const tradeOptions = Object.keys(PRESETS);
   const projectOptions = selectedTrade ? Object.keys(PRESETS[selectedTrade]?.jobs || {}) : [];
-
+  const { addToast } = useToast();
 
   const handleGeneralChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
@@ -113,6 +115,25 @@ const InputForm: React.FC<InputFormProps> = ({ formData, setFormData, onGenerate
         attachments: (prev.attachments || []).filter((_, index) => index !== indexToRemove)
     }));
   };
+  
+  const nudge = (elementId: string, msg: string) => {
+    const el = document.getElementById(elementId);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.classList.add('validation-error-ring');
+      setTimeout(() => el.classList.remove('validation-error-ring'), 2000);
+      addToast(msg, 'error');
+    }
+  };
+  
+  const handleValidationAndGenerate = () => {
+    if (!selectedTrade) return nudge('trade', 'Please select a trade.');
+    if (!selectedProject) return nudge('title', 'Please select a project title.');
+    if (!formData.siteAddress.trim()) return nudge('siteAddress', 'Please enter a site address.');
+    
+    onGenerate();
+  };
+
 
   const packageTiers: PackageTier[] = ['good', 'better', 'best'];
 
@@ -120,7 +141,7 @@ const InputForm: React.FC<InputFormProps> = ({ formData, setFormData, onGenerate
     <div className="flex flex-col h-full">
       <div className="flex-grow overflow-y-auto pr-2">
         
-        <Accordion title="Job Details" defaultOpen>
+        <Accordion title="Job Details" defaultOpen dataId="job-details">
             <InputField id="trade" name="trade" label="Trade" type="select" value={selectedTrade} onChange={handleGeneralChange} tooltip="Select the primary trade for this job, like Electrical or Plumbing.">
                 {tradeOptions.map(trade => <option key={trade} value={trade}>{trade}</option>)}
             </InputField>
@@ -136,7 +157,7 @@ const InputForm: React.FC<InputFormProps> = ({ formData, setFormData, onGenerate
             </InputField>
         </Accordion>
 
-        <Accordion title="Attachments">
+        <Accordion title="Attachments" dataId="attachments">
             <div className="flex items-center justify-between mb-1">
                 <label htmlFor="attachmentInput" className="block text-sm font-medium text-[var(--muted)]">Add Attachment</label>
                 <Tooltip text="Add file names or URLs that are relevant to the job, like blueprints or photos." />
@@ -172,7 +193,7 @@ const InputForm: React.FC<InputFormProps> = ({ formData, setFormData, onGenerate
             )}
         </Accordion>
 
-        <Accordion title="Scope & Pricing" defaultOpen>
+        <Accordion title="Scope & Pricing" defaultOpen dataId="scope-pricing">
             <InputField id="summary" name="summary" label="Job Summary" placeholder="Briefly describe the project." value={formData.summary} onChange={handleGeneralChange} type="textarea" rows={3} tooltip="Provide a brief, high-level summary for the AI to understand the project's goals."/>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
@@ -210,7 +231,7 @@ const InputForm: React.FC<InputFormProps> = ({ formData, setFormData, onGenerate
              <InputField id="currency" name="currency" label="Currency" placeholder="e.g., USD, CAD" value={formData.currency} onChange={handleGeneralChange} tooltip="The currency for all financial values in the proposal."/>
         </Accordion>
         
-        <Accordion title="Terms & Schedule">
+        <Accordion title="Terms & Schedule" dataId="terms-schedule">
              <InputField id="constraints" name="constraints" label="Constraints" placeholder="e.g., Work hours, site access" value={formData.constraints} onChange={handleGeneralChange} type="textarea" rows={2} tooltip="Note any site access issues, work hours, or other limitations."/>
              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                  <InputField id="warranty" name="warranty" label="Warranty (Months)" type="number" value={formData.warranty} onChange={handleGeneralChange} tooltip="The length of your workmanship warranty in months."/>
@@ -219,7 +240,7 @@ const InputForm: React.FC<InputFormProps> = ({ formData, setFormData, onGenerate
             <InputField id="timeline" name="timeline" label="Timeline Target" placeholder="e.g., 5-7 business days" value={formData.timeline} onChange={handleGeneralChange} tooltip="Provide an estimated completion time for the project."/>
         </Accordion>
         
-        <Accordion title="Branding">
+        <Accordion title="Branding" dataId="branding">
             <InputField id="brand" name="brand" label="Company Name" placeholder="Your Company LLC" value={formData.brand} onChange={handleGeneralChange} tooltip="Your official company name as it should appear on the proposal."/>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <InputField id="license" name="license" label="License #" placeholder="Your License Number" value={formData.license} onChange={handleGeneralChange} tooltip="Your official trade license number, if applicable."/>
@@ -233,7 +254,7 @@ const InputForm: React.FC<InputFormProps> = ({ formData, setFormData, onGenerate
       </div>
 
       <div className="mt-4 pt-4 border-t border-[var(--line)]">
-        <button onClick={onGenerate} disabled={isLoading} className="w-full btn-primary">
+        <button id="generateBtn" onClick={handleValidationAndGenerate} disabled={isLoading} className="w-full btn-primary">
           {isLoading ? (
             <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-black"></div>
           ) : (

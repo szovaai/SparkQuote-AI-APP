@@ -1,10 +1,10 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface AccordionProps {
   title: string;
   children: React.ReactNode;
   defaultOpen?: boolean;
+  dataId: string;
 }
 
 const ChevronDownIcon = () => (
@@ -13,15 +13,32 @@ const ChevronDownIcon = () => (
     </svg>
 );
 
+const Accordion: React.FC<AccordionProps> = ({ title, children, defaultOpen = false, dataId }) => {
+  const storageKey = `spark-acc-${dataId}`;
+  
+  const [isOpen, setIsOpen] = useState(() => {
+    try {
+      const savedState = localStorage.getItem(storageKey);
+      return savedState !== null ? JSON.parse(savedState) : defaultOpen;
+    } catch {
+      return defaultOpen;
+    }
+  });
 
-const Accordion: React.FC<AccordionProps> = ({ title, children, defaultOpen = false }) => {
-  const [isOpen, setIsOpen] = useState(defaultOpen);
+  const toggleOpen = () => {
+    setIsOpen((prev: boolean) => {
+      const newState = !prev;
+      localStorage.setItem(storageKey, JSON.stringify(newState));
+      return newState;
+    });
+  };
 
   return (
     <div className="border-b border-[var(--line)]">
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={toggleOpen}
         className="w-full flex justify-between items-center py-4 text-left"
+        aria-expanded={isOpen}
       >
         <span className="section-title">{title}</span>
         <span className={`text-[var(--muted)] transform transition-transform ${isOpen ? 'rotate-180' : ''}`}>
