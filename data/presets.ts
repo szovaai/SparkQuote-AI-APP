@@ -46,6 +46,7 @@ const createPlaceholderPreset = (jobTitle: string, trade: string) => {
     brand: brands[trade],
     license: licenses[trade],
     proposalNumberPrefix: brands[trade].substring(0,3).toUpperCase(),
+    attachments: [],
     primaryColor: '#00D58C',
     secondaryColor: '#F59E0B',
   };
@@ -159,6 +160,7 @@ const detailedPresets: { [trade: string]: { jobs: { [project: string]: any } } }
         brand: 'TrueCan Power Systems',
         license: 'AB-ELC-123456',
         proposalNumberPrefix: 'TPS',
+        attachments: ['photo_of_old_panel.jpg', 'site_access_notes.pdf'],
         primaryColor: '#22D3EE',
         secondaryColor: '#F59E0B',
       },
@@ -196,6 +198,7 @@ const detailedPresets: { [trade: string]: { jobs: { [project: string]: any } } }
         brand: 'ChargeRight Electrical',
         license: 'ON-ELC-789012',
         proposalNumberPrefix: 'CRE',
+        attachments: [],
         primaryColor: '#00D58C',
         secondaryColor: '#F59E0B',
       }
@@ -237,6 +240,7 @@ const detailedPresets: { [trade: string]: { jobs: { [project: string]: any } } }
         brand: 'Flow Masters Plumbing',
         license: 'BC-PLM-334455',
         proposalNumberPrefix: 'FMP',
+        attachments: [],
         primaryColor: '#3B82F6',
         secondaryColor: '#10B981',
       }

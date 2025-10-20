@@ -65,7 +65,7 @@ const buildProposalGenerationPrompt = (
         - **payment_schedule**: Create a standard payment schedule. Use the deposit percentage (${formData.deposit}%) as the first milestone. Create 1-2 more logical milestones (e.g., "Upon material delivery," "Upon substantial completion") and a final payment. The percentages must sum to 100.
         - **warranty**: Write a brief paragraph about the ${formData.warranty}-month workmanship warranty.
         - **terms_conditions**: Generate a list of 5-7 standard, generic terms and conditions for a contracting business (e.g., client responsibilities, change orders, liability, payment terms).
-        - **acceptance_block**: A short, formal sentence for the signature area. e.g., "Your signature below indicates acceptance of this proposal..."
+        - **acceptance_block**: A short, formal sentence for the signature area. It should state that signing indicates acceptance of the proposal for the selected package's scope and total investment. e.g., "Your signature below indicates acceptance of this proposal, including the scope and total investment for the package selected."
 
     2.  **upsellSuggestions**: Identify 3 logical, valuable upsells or add-ons based on the project. For each, provide:
         - **name**: A short, catchy name for the upsell (e.g., "Smart Home Upgrade").
@@ -193,22 +193,25 @@ Your task is to write 3 short, professional follow-up email templates related to
 - Company: ${formData.brand}
 
 **TASK:**
-Generate a JSON array of 3 email objects. Each object must have a "subject" and a "body".
+Generate a JSON array of 3 email objects. Each object must have a "subject", a "body", and "send_after_days".
 
-1.  **Email 1: Gentle Reminder (2 days after sending)**
+1.  **Email 1: Gentle Reminder**
+    - **send_after_days**: 2
     - Subject: "Following up on your proposal for ${selectedProject}"
     - Body: A brief, friendly check-in. Ask if they have any questions and reiterate your excitement for the project.
 
-2.  **Email 2: Value Proposition (5 days after sending)**
+2.  **Email 2: Value Proposition**
+    - **send_after_days**: 5
     - Subject: "Questions about your ${selectedProject} proposal?"
     - Body: Proactively address potential hesitations. Briefly highlight a key value point (e.g., quality of materials, warranty, your company's expertise). Invite them to a quick call.
 
-3.  **Email 3: Final Follow-Up / Offer Closes Soon (10 days after sending)**
+3.  **Email 3: Final Follow-Up**
+    - **send_after_days**: 10
     - Subject: "Your proposal for ${formData.siteAddress} expires soon"
     - Body: A polite final follow-up. Remind them the proposal is valid for ${formData.validity} days. Create a slight sense of urgency without being pushy.
 
 **OUTPUT FORMAT:**
-Return ONLY a single, valid JSON array. Do not include any text, markdown, or explanations before or after the JSON.
+Return ONLY a single, valid JSON array of objects, each with "subject", "body", and "send_after_days".
 `;
 
 export const generateFollowUpEmails = async (formData: FormData, quote: Quote, selectedProject: string): Promise<FollowUpEmail[]> => {
@@ -221,8 +224,9 @@ export const generateFollowUpEmails = async (formData: FormData, quote: Quote, s
             properties: {
                 subject: { type: Type.STRING },
                 body: { type: Type.STRING },
+                send_after_days: { type: Type.NUMBER },
             },
-            required: ['subject', 'body'],
+            required: ['subject', 'body', 'send_after_days'],
         },
     };
 

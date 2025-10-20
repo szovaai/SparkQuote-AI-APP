@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
 import InputForm from './components/InputForm';
@@ -72,6 +71,9 @@ function App() {
   const [saveStatus, setSaveStatus] = useState<
     'Saved' | 'Saving...' | 'Not Saved'
   >('Saved');
+  const [generationTimestamp, setGenerationTimestamp] = useState<number | null>(
+    null
+  );
 
   // Load preset when trade/project changes
   useEffect(() => {
@@ -126,6 +128,7 @@ function App() {
     setChangeOrder(null);
     setPackageComparison(null);
     setUpsellSuggestions([]);
+    setGenerationTimestamp(null);
 
     try {
       const { generatedContent, upsellSuggestions, packageComparison } =
@@ -138,6 +141,7 @@ function App() {
       setGeneratedContent(generatedContent);
       setUpsellSuggestions(upsellSuggestions);
       setPackageComparison(packageComparison);
+      setGenerationTimestamp(Date.now());
 
       // Also generate follow-up emails, using the 'better' quote as context
       if (quotes.better) {
@@ -206,8 +210,10 @@ function App() {
       <main className="flex-1 lg:h-screen lg:overflow-y-auto">
         <ProposalPreview
           formData={formData}
+          setFormData={setFormData}
           quotes={quotes}
           generatedContent={generatedContent}
+          generationTimestamp={generationTimestamp}
           upsellSuggestions={upsellSuggestions}
           packageComparison={packageComparison}
           followUpEmails={followUpEmails}
@@ -215,6 +221,7 @@ function App() {
           onGenerateChangeOrder={handleGenerateChangeOrder}
           isLoading={isLoading}
           error={error}
+          selectedProject={selectedProject}
         />
       </main>
     </div>

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import type { FormData, PackageTier } from '../types';
 import Accordion from './Accordion';
@@ -61,6 +60,7 @@ const InputField: React.FC<{id: string, name: string, label: string, placeholder
 
 const InputForm: React.FC<InputFormProps> = ({ formData, setFormData, onGenerate, isLoading, selectedTrade, setSelectedTrade, selectedProject, setSelectedProject, saveStatus }) => {
   const [selectedPackage, setSelectedPackage] = useState<PackageTier>('better');
+  const [attachmentInput, setAttachmentInput] = useState('');
   const tradeOptions = Object.keys(PRESETS);
   const projectOptions = selectedTrade ? Object.keys(PRESETS[selectedTrade]?.jobs || {}) : [];
 
@@ -97,6 +97,23 @@ const InputForm: React.FC<InputFormProps> = ({ formData, setFormData, onGenerate
     }));
   };
 
+  const handleAddAttachment = () => {
+    if (attachmentInput.trim()) {
+        setFormData(prev => ({
+            ...prev,
+            attachments: [...(prev.attachments || []), attachmentInput.trim()]
+        }));
+        setAttachmentInput('');
+    }
+  };
+
+  const handleRemoveAttachment = (indexToRemove: number) => {
+    setFormData(prev => ({
+        ...prev,
+        attachments: (prev.attachments || []).filter((_, index) => index !== indexToRemove)
+    }));
+  };
+
   const packageTiers: PackageTier[] = ['good', 'better', 'best'];
 
   return (
@@ -117,6 +134,42 @@ const InputForm: React.FC<InputFormProps> = ({ formData, setFormData, onGenerate
                 <option value="Business Partner">Business Partner</option>
                 <option value="Subcontractor">Subcontractor</option>
             </InputField>
+        </Accordion>
+
+        <Accordion title="Attachments">
+            <div className="flex items-center justify-between mb-1">
+                <label htmlFor="attachmentInput" className="block text-sm font-medium text-[var(--muted)]">Add Attachment</label>
+                <Tooltip text="Add file names or URLs that are relevant to the job, like blueprints or photos." />
+            </div>
+            <div className="flex gap-2">
+                <input
+                    id="attachmentInput"
+                    type="text"
+                    value={attachmentInput}
+                    onChange={(e) => setAttachmentInput(e.target.value)}
+                    placeholder="e.g., Blueprint.pdf or URL"
+                    className="input flex-grow"
+                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddAttachment(); }}}
+                />
+                <button onClick={handleAddAttachment} className="btn-secondary flex-shrink-0">Add</button>
+            </div>
+            <div className="mt-3 space-y-2">
+                {(formData.attachments || []).map((att, index) => (
+                    <div key={index} className="flex items-center justify-between bg-[var(--bg)] p-2 rounded-md text-sm group">
+                        <span className="truncate text-[var(--muted)]" title={att}>{att}</span>
+                        <button 
+                            onClick={() => handleRemoveAttachment(index)} 
+                            className="text-[var(--error)] opacity-50 group-hover:opacity-100 transition-opacity ml-2 text-lg font-bold flex-shrink-0"
+                            aria-label={`Remove ${att}`}
+                        >
+                            &times;
+                        </button>
+                    </div>
+                ))}
+            </div>
+             {(!formData.attachments || formData.attachments.length === 0) && (
+                <p className="text-xs text-center text-[var(--muted)] pt-2">No attachments added.</p>
+            )}
         </Accordion>
 
         <Accordion title="Scope & Pricing" defaultOpen>

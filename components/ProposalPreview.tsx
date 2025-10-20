@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import type {
   FormData,
   Quote,
@@ -15,8 +15,10 @@ import SignaturePad from './SignaturePad';
 
 interface ProposalPreviewProps {
   formData: FormData;
+  setFormData: React.Dispatch<React.SetStateAction<FormData>>;
   quotes: { [key in PackageTier]?: Quote };
   generatedContent: GeneratedContent | null;
+  generationTimestamp: number | null;
   upsellSuggestions: UpsellSuggestion[];
   packageComparison: PackageComparison | null;
   followUpEmails: FollowUpEmail[];
@@ -24,6 +26,7 @@ interface ProposalPreviewProps {
   onGenerateChangeOrder: (changeRequest: string) => void;
   isLoading: boolean;
   error: string | null;
+  selectedProject: string;
 }
 
 type Tab = 'proposal' | 'comparison' | 'upsells' | 'followups' | 'changeorder';
@@ -34,6 +37,20 @@ const ScaleIcon = () => <svg xmlns="http://www.w3.org/2000/svg" fill="none" view
 const ArrowUpIcon = () => <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18 9 11.25l4.306 4.306a11.95 11.95 0 0 1 5.814-5.518l2.74-1.22m0 0-5.94-2.281m5.94 2.28-2.28 5.941" /></svg>;
 const MailIcon = () => <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" /></svg>;
 const PencilIcon = () => <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" /></svg>;
+const SparkQuoteLogo = () => (
+    <svg width="40" height="40" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <linearGradient id="logoGradient" x1="4" y1="4" x2="44" y2="44" gradientUnits="userSpaceOnUse">
+                <stop stopColor="var(--proposal-primary, var(--primary))" />
+                <stop offset="1" stopColor="var(--proposal-secondary, var(--info))" />
+            </linearGradient>
+        </defs>
+        <path d="M24 4C12.95 4 4 12.95 4 24C4 35.05 12.95 44 24 44C35.05 44 44 35.05 44 24C44 12.95 35.05 4 24 4Z" fill="url(#logoGradient)" />
+        <path d="M22.53 15.5L16.5 24.5H25.5L24.47 20.5H29.5L22.53 15.5Z" fill="white" fillOpacity="0.9" />
+        <path d="M25.47 32.5L31.5 23.5H22.5L23.53 27.5H18.5L25.47 32.5Z" fill="white" fillOpacity="0.9" />
+    </svg>
+);
+
 
 const Section: React.FC<{ title: string; children: React.ReactNode }> = ({
   title,
@@ -112,8 +129,10 @@ const QuoteTotals: React.FC<{ quote: Quote }> = ({ quote }) => (
 
 const ProposalPreview: React.FC<ProposalPreviewProps> = ({
   formData,
+  setFormData,
   quotes,
   generatedContent,
+  generationTimestamp,
   upsellSuggestions,
   packageComparison,
   followUpEmails,
@@ -121,10 +140,19 @@ const ProposalPreview: React.FC<ProposalPreviewProps> = ({
   onGenerateChangeOrder,
   isLoading,
   error,
+  selectedProject,
 }) => {
   const [activeTab, setActiveTab] = useState<Tab>('proposal');
+  const [selectedTier, setSelectedTier] = useState<PackageTier>('better');
   const [signatureDataUrl, setSignatureDataUrl] = useState('');
+  const [signerName, setSignerName] = useState('');
+  const [isAccepted, setIsAccepted] = useState(false);
+  const [acceptanceDate, setAcceptanceDate] = useState<Date | null>(null);
   const [changeRequest, setChangeRequest] = useState('');
+  const [checkedUpsells, setCheckedUpsells] = useState<string[]>([]);
+  const [copiedEmailIndex, setCopiedEmailIndex] = useState<number | null>(null);
+  const [timeLeft, setTimeLeft] = useState('');
+  const [badgeColor, setBadgeColor] = useState('var(--muted)');
   const signaturePadRef = useRef<{ clear: () => void }>(null);
 
   const { primaryColor, secondaryColor } = formData;
@@ -132,6 +160,112 @@ const ProposalPreview: React.FC<ProposalPreviewProps> = ({
     '--proposal-primary': primaryColor || 'var(--primary)',
     '--proposal-secondary': secondaryColor || 'var(--secondary)',
   } as React.CSSProperties;
+
+  useEffect(() => {
+    // Reset checked upsells and selected tier when a new proposal is generated
+    setCheckedUpsells([]);
+    setSelectedTier('better');
+  }, [generatedContent]);
+
+  useEffect(() => {
+    if (!generationTimestamp) {
+        setTimeLeft('');
+        return;
+    }
+
+    const calculateTimeLeft = () => {
+        const expiryDate = new Date(generationTimestamp + formData.validity * 86400000);
+        const diff = expiryDate.getTime() - new Date().getTime();
+
+        if (diff <= 0) {
+            setTimeLeft('Expired');
+            setBadgeColor('var(--error)');
+            clearInterval(interval);
+            return;
+        }
+
+        const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+        setTimeLeft(`Valid for ${days} more day${days > 1 ? 's' : ''}`);
+        
+        if (days <= 2) setBadgeColor('var(--error)');
+        else if (days <= 5) setBadgeColor('var(--secondary)');
+        else setBadgeColor('var(--muted)');
+    };
+
+    calculateTimeLeft();
+    const interval = setInterval(calculateTimeLeft, 60000); // Update every minute
+
+    return () => clearInterval(interval);
+  }, [generationTimestamp, formData.validity]);
+  
+  const handleAccept = () => {
+    const acceptedQuote = quotes[selectedTier];
+    if (!signerName.trim() || !signatureDataUrl || !acceptedQuote) {
+      return; // Button should be disabled, but this is a safeguard
+    }
+
+    const date = new Date();
+    setAcceptanceDate(date);
+
+    const payload = {
+      proposalTitle: selectedProject,
+      signer: signerName.trim(),
+      signedAt: date.toISOString(),
+      signaturePNG: signatureDataUrl,
+      packageAccepted: selectedTier,
+      totalAccepted: acceptedQuote.grandTotal,
+      currency: acceptedQuote.currency,
+    };
+
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    const proposalNumber = `${formData.proposalNumberPrefix}-${String(
+      new Date().getFullYear()
+    ).slice(-2)}${new Date().getMonth() + 1}-001`;
+    a.download = `Acceptance-Receipt-${proposalNumber}.json`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+
+    setIsAccepted(true);
+  };
+
+  const handleUpsellToggle = (isChecked: boolean, lineItem: string) => {
+    const currentItems = formData.packages.better.materialLineItems.split('\n').filter(l => l.trim() !== '');
+    const isPresent = currentItems.includes(lineItem);
+    
+    let updatedItems;
+    if (isChecked && !isPresent) {
+        updatedItems = [...currentItems, lineItem];
+    } else if (!isChecked && isPresent) {
+        updatedItems = currentItems.filter(item => item !== lineItem);
+    } else {
+        return; // No change needed
+    }
+
+    setCheckedUpsells(prev => isChecked ? [...prev, lineItem] : prev.filter(item => item !== lineItem));
+    
+    setFormData(prev => ({
+        ...prev,
+        packages: {
+            ...prev.packages,
+            better: {
+                ...prev.packages.better,
+                materialLineItems: updatedItems.join('\n'),
+            }
+        }
+    }));
+  };
+
+  const handleCopyEmail = (email: FollowUpEmail, index: number) => {
+    const emailText = `Subject: ${email.subject}\n\n${email.body}`;
+    navigator.clipboard.writeText(emailText).then(() => {
+        setCopiedEmailIndex(index);
+        setTimeout(() => setCopiedEmailIndex(null), 2500);
+    }).catch(err => {
+        console.error('Failed to copy text: ', err);
+    });
+  };
 
   const tabs: { id: Tab; label: string, icon: React.ReactNode }[] = [
     { id: 'proposal', label: 'Proposal', icon: <DocumentIcon /> },
@@ -151,13 +285,34 @@ const ProposalPreview: React.FC<ProposalPreviewProps> = ({
       </div>
     </Section>
   );
+  
+  const PackageSwitcher: React.FC<{selectedTier: PackageTier, onSelectTier: (tier: PackageTier) => void}> = ({ selectedTier, onSelectTier }) => (
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 bg-[var(--bg)] p-2 rounded-lg border border-[var(--line)] my-6">
+      {(['good', 'better', 'best'] as PackageTier[]).map(tier => (
+        <button
+          key={tier}
+          onClick={() => onSelectTier(tier)}
+          className={`px-3 py-2 text-sm font-bold rounded-md capitalize transition-all text-center ${selectedTier === tier ? 'bg-[var(--proposal-primary)] text-[var(--bg-alt)] shadow-lg' : 'bg-transparent text-[var(--muted)] hover:bg-[var(--line)]'}`}
+        >
+          <span className="block">{tier}</span>
+          {quotes[tier] && <span className="text-xs font-normal opacity-90">{formatCurrency(quotes[tier]!.grandTotal, quotes[tier]!.currency)}</span>}
+        </button>
+      ))}
+    </div>
+  );
 
-  const renderProposal = () => (
-    <>
+  const renderProposal = () => {
+    const currentQuote = quotes[selectedTier];
+    const scopeItems = formData.packages[selectedTier].scope.split('\n').filter(line => line.trim() !== '');
+
+    return <>
       <header className="flex flex-col sm:flex-row justify-between items-start mb-12 gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold">{formData.brand}</h1>
-          <p className="text-[var(--muted)]">License #: {formData.license}</p>
+        <div className="flex items-center gap-3">
+          <SparkQuoteLogo />
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold">{formData.brand}</h1>
+            <p className="text-[var(--muted)]">License #: {formData.license}</p>
+          </div>
         </div>
         <div className="text-left sm:text-right w-full sm:w-auto">
           <h2 className="text-xl sm:text-2xl font-bold">Proposal</h2>
@@ -170,14 +325,40 @@ const ProposalPreview: React.FC<ProposalPreviewProps> = ({
           <p className="text-[var(--muted)]">
             Date: {new Date().toLocaleDateString()}
           </p>
+           {timeLeft && (
+              <p className="text-xs font-semibold mt-1 px-2 py-1 rounded-full" style={{ color: badgeColor, backgroundColor: `${badgeColor}20` }}>
+                  {timeLeft}
+              </p>
+           )}
         </div>
       </header>
 
       <Section title="Cover Letter">{generatedContent!.cover_letter}</Section>
-      <Section title="Scope of Work">
-        <ul>
-          {generatedContent!.scope_of_work.map((item, i) => (
-            <li key={i}>{item}</li>
+      
+      {formData.attachments && formData.attachments.length > 0 && (
+          <Section title="Reference Documents">
+            <ul className="list-disc pl-5 space-y-1">
+              {formData.attachments.map((attachment, i) => (
+                <li key={i}>
+                  {attachment.startsWith('http') ? (
+                    <a href={attachment} target="_blank" rel="noopener noreferrer" className="text-[var(--proposal-primary)] hover:underline break-all">
+                      {attachment}
+                    </a>
+                  ) : (
+                    <span className="break-all">{attachment}</span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </Section>
+      )}
+
+      <PackageSwitcher selectedTier={selectedTier} onSelectTier={setSelectedTier} />
+
+      <Section title={`Scope of Work (${selectedTier})`}>
+        <ul className="list-disc pl-5">
+          {scopeItems.map((item, i) => (
+            <li key={i}>{item.startsWith('- ') ? item.substring(2) : item}</li>
           ))}
         </ul>
       </Section>
@@ -197,17 +378,17 @@ const ProposalPreview: React.FC<ProposalPreviewProps> = ({
           </ul>
         </Section>
       </div>
-      <Section title="Investment">
-        {quotes.better ? (
+      <Section title={`Investment (${selectedTier})`}>
+        {currentQuote ? (
           <div>
             <LineItemsTable
-              items={quotes.better.items}
-              currency={quotes.better.currency}
+              items={currentQuote.items}
+              currency={currentQuote.currency}
             />
-            <QuoteTotals quote={quotes.better} />
+            <QuoteTotals quote={currentQuote} />
           </div>
         ) : (
-          <p>Pricing details not available.</p>
+          <p>Pricing details not available for this package.</p>
         )}
       </Section>
       <Section title="Schedule & Payment">
@@ -232,17 +413,61 @@ const ProposalPreview: React.FC<ProposalPreviewProps> = ({
 
       <Section title="Acceptance">
         <p>{generatedContent!.acceptance_block}</p>
-        <div className="mt-4 border border-[var(--line)] rounded-md p-4">
-            <SignaturePad ref={signaturePadRef} onSignatureEnd={setSignatureDataUrl} />
-            <div className="flex justify-between items-center mt-2">
-                <p className="text-xs text-[var(--muted)]">Sign above</p>
-                <button onClick={() => signaturePadRef.current?.clear()} className="btn-secondary text-xs">Clear</button>
+        
+        {currentQuote && (
+          <div className="font-bold text-lg my-4 p-4 bg-[var(--bg)] rounded-md text-center border border-[var(--line)]">
+              Accepted Package: <span className="capitalize text-[var(--proposal-primary)]">{selectedTier}</span>
+              <span className="mx-2 text-[var(--muted)]">|</span>
+              Total Investment: <span className="text-[var(--proposal-primary)]">{formatCurrency(currentQuote.grandTotal, currentQuote.currency)}</span>
+          </div>
+        )}
+
+        <div className={`mt-6 border border-[var(--line)] rounded-md p-4 ${isAccepted ? 'opacity-70' : ''}`}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
+                 <div>
+                    <label htmlFor="signerName" className="block text-sm font-medium text-[var(--muted)] mb-1">1. Printed Name</label>
+                    <input
+                        type="text"
+                        id="signerName"
+                        value={signerName}
+                        onChange={(e) => setSignerName(e.target.value)}
+                        className="input"
+                        placeholder="Type your full name"
+                        disabled={isAccepted}
+                        aria-label="Signer's full name"
+                    />
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-[var(--muted)] mb-1">2. Signature</label>
+                    <div className="border border-[var(--line)] rounded-md">
+                        <SignaturePad ref={signaturePadRef} onSignatureEnd={setSignatureDataUrl} disabled={isAccepted} />
+                    </div>
+                     <div className="flex justify-end items-center mt-1">
+                        <button onClick={() => signaturePadRef.current?.clear()} className="btn-secondary text-xs" disabled={isAccepted}>Clear</button>
+                    </div>
+                </div>
             </div>
         </div>
-        {signatureDataUrl && <img src={signatureDataUrl} alt="Signature" className="h-20 mt-2 bg-white rounded" />}
+        <div className="mt-6 flex flex-col items-start">
+            {!isAccepted ? (
+                <button
+                  onClick={handleAccept}
+                  disabled={!signerName.trim() || !signatureDataUrl || !currentQuote}
+                  className="btn-primary w-full sm:w-auto"
+                >
+                  3. Accept & Sign Proposal
+                </button>
+            ) : (
+                <div className="w-full p-4 bg-green-500/10 border border-green-500/30 text-green-300 rounded-md">
+                  <h4 className="font-bold">✅ Proposal Accepted!</h4>
+                  <p className="text-sm mt-1">A receipt has been downloaded. Thank you, {signerName}.</p>
+                  {acceptanceDate && <p className="text-xs text-[var(--muted)] mt-1">Accepted on {acceptanceDate.toLocaleString()}</p>}
+                </div>
+            )}
+        </div>
       </Section>
-    </>
-  );
+    </>;
+  };
 
   const renderComparison = () => (
     <Section title="Package Comparison">
@@ -282,14 +507,25 @@ const ProposalPreview: React.FC<ProposalPreviewProps> = ({
 
   const renderUpsells = () => (
     <Section title="Suggested Upsells & Add-ons">
+        <p className="text-sm text-[var(--muted)] mb-4">Select any add-ons to include them in the 'Better' package and update the total investment.</p>
         <div className="space-y-4">
             {upsellSuggestions.map((item, i) => (
-                <div key={i} className="p-4 border border-[var(--line)] rounded-md bg-[var(--bg)]">
-                    <h3 className="font-bold">{item.name}</h3>
-                    <p className="text-sm my-1 text-[var(--muted)]">{item.why_it_matters}</p>
-                    <div className="mt-2 pt-2 border-t border-[var(--line)] text-xs font-mono text-cyan-400">
-                        {item.line_item}
-                    </div>
+                <div key={i} className="p-4 border border-[var(--line)] rounded-md bg-[var(--bg)] transition-all has-[:checked]:bg-[var(--proposal-primary)]/10 has-[:checked]:border-[var(--proposal-primary)]/50">
+                    <label className="flex items-start gap-4 cursor-pointer">
+                        <input
+                            type="checkbox"
+                            className="mt-1 flex-shrink-0"
+                            checked={checkedUpsells.includes(item.line_item)}
+                            onChange={(e) => handleUpsellToggle(e.target.checked, item.line_item)}
+                        />
+                        <div className="flex-grow">
+                             <h3 className="font-bold">{item.name}</h3>
+                             <p className="text-sm my-1 text-[var(--muted)]">{item.why_it_matters}</p>
+                             <div className="mt-2 pt-2 border-t border-[var(--line)] text-xs font-mono text-cyan-400">
+                                 {item.line_item}
+                             </div>
+                        </div>
+                    </label>
                 </div>
             ))}
         </div>
@@ -300,8 +536,19 @@ const ProposalPreview: React.FC<ProposalPreviewProps> = ({
     <Section title="Follow-up Email Templates">
         <div className="space-y-4">
             {followUpEmails.map((email, i) => (
-                <div key={i} className="p-4 border border-[var(--line)] rounded-md bg-[var(--bg)]">
-                    <h3 className="font-semibold">Subject: {email.subject}</h3>
+                <div key={i} className="p-4 border border-[var(--line)] rounded-md bg-[var(--bg)] relative group">
+                    <div className="flex justify-between items-center mb-2">
+                        <h3 className="font-semibold">Subject: {email.subject}</h3>
+                        <div className="flex items-center gap-4">
+                            <span className="text-xs font-bold text-[var(--muted)]">Send on Day +{email.send_after_days}</span>
+                             <button 
+                                onClick={() => handleCopyEmail(email, i)} 
+                                className="btn-secondary opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity text-xs"
+                            >
+                                {copiedEmailIndex === i ? 'Copied!' : 'Copy'}
+                            </button>
+                        </div>
+                    </div>
                     <div className="mt-2 pt-2 border-t border-[var(--line)] whitespace-pre-wrap text-sm text-[var(--muted)]">
                         {email.body}
                     </div>
@@ -466,6 +713,10 @@ const ProposalPreview: React.FC<ProposalPreviewProps> = ({
                 </>
               )}
             </div>
+        </div>
+        <div className="print-footer">
+            <span>{formData.brand} | License #: {formData.license}</span>
+            <span className="page-number"></span>
         </div>
       </div>
     </div>

@@ -92,6 +92,7 @@ export interface PackageComparison {
 export interface FollowUpEmail {
   subject: string;
   body: string;
+  send_after_days: number;
 }
 
 export interface ChangeOrder {

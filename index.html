@@ -5,396 +5,232 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>SparkQuote AI</title>
 
-  <!-- Tailwind (optional) -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.25.0",
+    "use-debounce": "https://aistudiocdn.com/use-debounce@^10.0.6"
+  }
+}
+</script>
 
   <style>
-    /* === Dark Mode UI Enhancements === */
+    /* Global Styles & Design System */
     :root {
-      --bg: #0D1117;
-      --bg-alt: #0F141B;
-      --line: #1E293B;
-      --fg: #E8F2EE;
-      --muted: #9CA3AF;
-      --primary: #00D58C;
-      --accent: #22D3EE;
+      --bg: #0F141B; /* Card panels */
+      --bg-alt: #0D1117; /* Graphite base */
+      --line: #1E293B; /* Borders/Lines */
+      --fg: #E8F2EE; /* Text Primary */
+      --muted: #93A1AF; /* Text Muted */
+      --primary: #00D58C; /* Mint */
+      --secondary: #F59E0B; /* Amber */
+      --info: #22D3EE; /* Cyan */
       --error: #EF4444;
-    }
-    :root.light {
-      --bg: #ffffff;
-      --bg-alt: #f8fafc;
-      --line: #e2e8f0;
-      --fg: #0b1220;
-      --muted: #475569;
-      --primary: #16a34a;
-      --accent: #0ea5e9;
-      --error: #dc2626;
+      --success: #10B981;
     }
 
-    html, body {
+    /* Reset and base styles */
+    * {
+      box-sizing: border-box;
       margin: 0;
       padding: 0;
-      background: var(--bg);
+    }
+    
+    html {
+      /* Slightly reduce base font size to make UI more compact */
+      font-size: 15px; 
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+      background-color: var(--bg-alt);
       color: var(--fg);
-      font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-      line-height: 1.6;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
     }
 
-    .header {
-      display:flex; align-items:center; justify-content:space-between;
-      gap: 12px; padding: 14px 18px; border-bottom: 1px solid var(--line);
-      position: sticky; top: 0; background: rgba(13,17,23,.94); backdrop-filter: blur(6px);
-    }
-    .badge { font-size:12px; color:var(--muted); border:1px dashed var(--line); padding:4px 8px; border-radius:999px; }
-
-    .container {
-      max-width: 1100px; margin: 20px auto; padding: 0 16px;
-      display: grid; grid-template-columns: 360px 1fr; gap: 16px;
-    }
-    .card {
-      background: var(--bg-alt);
-      border: 1px solid var(--line);
-      border-radius: 16px;
-      padding: 16px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.25);
-    }
-    .section-title {
-      font-size: 12px; text-transform: uppercase; color: var(--muted); letter-spacing:.5px; margin-bottom: 6px;
-    }
-
-    .input, select, textarea, button {
+    /* Custom utility classes to be used with Tailwind */
+    .input {
       width: 100%;
-      background: #0B0F14;
-      color: var(--fg);
-      border: 1px solid var(--line);
-      border-radius: 10px;
       padding: 10px 12px;
-      margin-bottom: 12px;
+      border: 1px solid var(--line);
+      background: var(--bg-alt);
+      color: var(--fg);
+      border-radius: 8px;
+      transition: border-color 0.2s, box-shadow 0.2s;
     }
-    .input:focus, select:focus, textarea:focus {
+    .input:focus {
       outline: none;
       border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(0,213,140,0.25);
+      box-shadow: 0 0 0 2px rgba(0, 213, 140, 0.2);
+    }
+    
+    .btn-primary {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 14px;
+      border: 0;
+      border-radius: 8px;
+      background-image: linear-gradient(135deg, var(--primary), var(--info));
+      color: var(--bg-alt);
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.2s ease, opacity 0.2s;
+    }
+    .btn-primary:hover:not(:disabled) {
+      transform: scale(1.03);
+    }
+    .btn-primary:disabled {
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+    
+    .btn-secondary {
+       padding: 8px 12px;
+       border: 1px solid var(--line);
+       border-radius: 8px;
+       background: transparent;
+       color: var(--muted);
+       font-weight: 600;
+       cursor: pointer;
+       transition: background-color 0.2s, color 0.2s;
+    }
+    .btn-secondary:hover {
+       background-color: var(--line);
+       color: var(--fg);
     }
 
-    .btn {
-      background: linear-gradient(135deg, var(--primary), var(--accent));
-      color: #0B0F14; border: 0; border-radius: 12px;
-      font-weight: 700; padding: 10px 14px; cursor: pointer;
-      transition: transform .15s ease, opacity .15s;
-    }
-    .btn:hover { transform: translateY(-1px); }
-    .btn-ghost { background: transparent; color: var(--fg); border: 1px solid var(--line); }
-
-    .totals {
-      display:flex; gap:16px; align-items:center; justify-content:flex-end;
-      position: sticky; bottom:0; background: rgba(13,17,23,.94);
-      border-top:1px solid var(--line); padding:10px 16px; font-weight:600;
+    .section-title {
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      color: var(--muted);
+      letter-spacing: 0.5px;
+      font-weight: 600;
     }
 
-    ::-webkit-scrollbar { width:8px; height:8px; }
-    ::-webkit-scrollbar-thumb { background: var(--line); border-radius:10px; }
-    ::-webkit-scrollbar-track { background: transparent; }
+    /* Custom Scrollbar Styling */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
 
+    ::-webkit-scrollbar-track {
+      background: transparent; /* Make track invisible */
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background-color: var(--line); /* Use the subtle border color */
+      border-radius: 10px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background-color: var(--muted); /* Lighter color on hover */
+    }
+    
+    .print-footer {
+      display: none;
+    }
+
+
+    /* Print-specific styles for PDF export */
     @media print {
-      html, body { background: #fff !important; color: #000 !important; font-size: 12px; }
-      .no-print { display:none !important; }
-      .card { border: none !important; box-shadow: none !important; }
+      @page {
+        size: A4;
+        margin: 0.75in;
+      }
+      
+      html, body {
+        background-color: #fff !important;
+        color: #000 !important;
+        font-family: 'Georgia', 'Times New Roman', Times, serif;
+        font-size: 11pt;
+      }
+      
+      aside, .print\:hidden {
+        display: none !important;
+      }
+
+      main {
+        width: 100%;
+        height: auto;
+        overflow: visible;
+        padding: 0;
+        /* Add padding to body to avoid content overlapping with fixed footer */
+        padding-bottom: 1in; 
+      }
+      
+      .print\:shadow-none { box-shadow: none !important; }
+      .print\:border-none { border: none !important; }
+      .print\:my-0 { margin-top: 0 !important; margin-bottom: 0 !important; }
+      
+      /* The footer that will be visible on each page */
+      .print-footer {
+        position: fixed;
+        bottom: 0;
+        left: 0.75in;
+        right: 0.75in;
+        height: 0.5in;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 9pt;
+        color: #666;
+        border-top: 1px solid #ccc;
+      }
+
+      /* Page numbering logic */
+      body {
+        counter-reset: page;
+      }
+      .page-number::after {
+        counter-increment: page;
+        content: "Page " counter(page);
+      }
+
+      /* General layout improvements for print */
+      h1, h2, h3, h4, table, ul, ol {
+        color: #000 !important;
+        break-inside: avoid;
+      }
+      
+      h2 {
+        break-after: avoid;
+      }
+      
+      a {
+          color: #000 !important;
+          text-decoration: none !important;
+      }
+      
+      .prose {
+        font-size: 11pt;
+      }
+
+      .references-section {
+        page-break-before: always;
+        padding-top: 1rem;
+      }
+      .references-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+      }
+      .reference-image-container img {
+        width: 100%;
+        border: 1px solid #eee;
+        border-radius: 4px;
+      }
     }
   </style>
 </head>
 <body>
-  <header class="header no-print">
-    <div style="display:flex; gap:10px; align-items:center;">
-      <div style="width:28px;height:28px;border-radius:8px;background:var(--primary);"></div>
-      <strong>SparkQuote AI</strong>
-      <span class="badge">v0.3</span>
-    </div>
-    <div style="display:flex; gap:8px; align-items:center;">
-      <button id="themeToggle" class="btn-ghost" style="width:auto;padding:8px 12px;">🌙</button>
-      <button id="saveBtn" class="btn-ghost" style="width:auto;padding:8px 12px;">Save</button>
-      <button id="generateBtn" class="btn" style="width:auto;">Generate Proposal</button>
-    </div>
-  </header>
-
-  <main class="container">
-    <!-- Left: Form -->
-    <section class="card no-print">
-      <div class="section-title">Basics</div>
-
-      <label>Trade</label>
-      <select id="trade" class="input"></select>
-
-      <label>Project Title</label>
-      <select id="project" class="input"></select>
-
-      <label>City / Region</label>
-      <input id="city" class="input" placeholder="Calgary, AB"/>
-
-      <label>Client Type</label>
-      <select id="client" class="input">
-        <option>Homeowner</option>
-        <option>Landlord</option>
-        <option>General Contractor</option>
-      </select>
-
-      <label>Job Summary (basis for AI)</label>
-      <textarea id="summary" rows="4" class="input"
-        placeholder="Upgrade to 200A panel, add 12 LED pot lights in kitchen/living, add 4 GFCI outlets. Patch/paint by others."></textarea>
-
-      <div style="display:flex; gap:8px;">
-        <button id="loadPreset" class="btn-ghost">Load Preset</button>
-        <button id="genBtn" class="btn">Generate</button>
-      </div>
-      <div id="loading" style="display:none; margin-top:8px;color:var(--muted);">⚙️ Generating…</div>
-    </section>
-
-    <!-- Right: Preview -->
-    <section class="card print:shadow-none print:border-none">
-      <div class="section-title">Preview</div>
-      <div id="proposalHtml" style="min-height:320px;border:1px dashed var(--line);border-radius:12px;padding:12px;">
-        Start by selecting a preset and clicking <em>Generate</em>.
-      </div>
-      <div style="display:flex; gap:8px; margin-top:12px;" class="no-print">
-        <button id="copyBtn" class="btn-ghost">Copy</button>
-        <button id="downloadBtn" class="btn-ghost">Download HTML</button>
-      </div>
-    </section>
-  </main>
-
-  <div class="totals no-print">
-    <span>Subtotal: <strong id="t_sub">—</strong></span>
-    <span>Tax: <strong id="t_tax">—</strong></span>
-    <span>Total: <strong id="t_total">—</strong></span>
-    <span>Deposit: <strong id="t_dep">—</strong></span>
-    <span>Balance: <strong id="t_bal">—</strong></span>
-  </div>
-
-  <!-- Error overlay so blank screens show details -->
-  <div id="errorOverlay" style="display:none;position:fixed;inset:0;background:#0D1117;color:#E8F2EE;z-index:9999;padding:24px;">
-    <h2>⚠️ Something went wrong</h2>
-    <pre id="errorText" style="white-space:pre-wrap;font-family:ui-monospace,monospace;"></pre>
-  </div>
-
-  <script type="module">
-    // Theme toggle with persistence
-    const root = document.documentElement;
-    const savedTheme = localStorage.getItem('sparkquote-theme');
-    if (savedTheme === 'light') root.classList.add('light');
-    const themeBtn = document.getElementById('themeToggle');
-    if (themeBtn) {
-      themeBtn.textContent = root.classList.contains('light') ? '☀️' : '🌙';
-      themeBtn.onclick = () => {
-        root.classList.toggle('light');
-        localStorage.setItem('sparkquote-theme', root.classList.contains('light') ? 'light' : 'dark');
-        themeBtn.textContent = root.classList.contains('light') ? '☀️' : '🌙';
-      };
-    }
-
-    // Error overlay helpers
-    const showErr = (msg) => {
-      const ov = document.getElementById('errorOverlay');
-      const tx = document.getElementById('errorText');
-      tx.textContent = msg;
-      ov.style.display = 'block';
-      console.error(msg);
-    };
-    window.addEventListener('error', e => showErr((e.error && e.error.stack) || e.message));
-    window.addEventListener('unhandledrejection', e => showErr((e.reason && e.reason.stack) || String(e.reason)));
-
-    // Safe JSON parse (for when model returns JSON blocks)
-    function safeParseJSON(txt) {
-      if (typeof txt !== "string") return null;
-      const cleaned = txt
-        .replace(/^\s*```json\s*/i, "")
-        .replace(/^\s*```\s*/i, "")
-        .replace(/\s*```\s*$/i, "")
-        .trim();
-      try { return JSON.parse(cleaned); } catch { return null; }
-    }
-
-    // Load presets safely (root-relative)
-    let PRESETS = {};
-    try {
-      const r = await fetch('/presets.json', { cache: 'no-store' });
-      PRESETS = r.ok ? await r.json() : {};
-    } catch (e) {
-      console.warn('presets.json not loaded; continuing without presets', e);
-      PRESETS = {};
-    }
-
-    // Populate dropdowns
-    const tradeEl = document.getElementById('trade');
-    const projectEl = document.getElementById('project');
-    const tradeNames = Object.keys(PRESETS);
-    tradeEl.innerHTML = tradeNames.map(n => `<option>${n}</option>`).join('') || `<option value="">Select trade</option>`;
-    function refreshProjects() {
-      const t = tradeEl.value;
-      const items = PRESETS[t] || [];
-      projectEl.innerHTML = items.map(x => `<option>${x}</option>`).join('') || `<option value="">Select project</option>`;
-    }
-    tradeEl.addEventListener('change', refreshProjects);
-    refreshProjects();
-
-    // Tiny “Load Preset” example: copy title into summary
-    document.getElementById('loadPreset')?.addEventListener('click', () => {
-      const title = projectEl.value || '';
-      const city = document.getElementById('city').value || 'Your City';
-      const pad = [
-        `Preset: ${title}`,
-        `Location: ${city}`,
-        `Include key scope bullets here…`
-      ].join('\n');
-      document.getElementById('summary').value = pad;
-    });
-
-    // =============== Vercel AI SDK client call (to your server route) ===============
-    // This streams text from /api/chat (standard Vercel AI SDK endpoint).
-    // If your route is different (e.g. /api/generate), change CHAT_ENDPOINT below.
-    const CHAT_ENDPOINT = '/api/chat';
-
-    async function streamFromAI(payload) {
-      const system = `
-Return STRICT JSON only with keys:
-{
- "cover_letter": "string",
- "scope_of_work": ["string"],
- "inclusions": ["string"],
- "exclusions": ["string"],
- "schedule_notes": "string",
- "payment_schedule": [{"milestone":"string","percent":number}],
- "warranty": "string",
- "terms_conditions": ["string"],
- "acceptance_block": "string"
-}
-Rules:
-- JSON only. No markdown. Keep it concise and client-friendly.
-- If info is missing, make safe, generic assumptions.
-      `.trim();
-
-      const user = `
-Trade: ${payload.trade}
-Project title: ${payload.title}
-City/Region: ${payload.city_region}
-Client type: ${payload.client_type}
-Job summary (basis for AI):
-${payload.job_summary}
-      `.trim();
-
-      // Standard Vercel AI SDK chat schema
-      const body = {
-        messages: [
-          { role: 'system', content: system },
-          { role: 'user', content: user }
-        ]
-      };
-
-      const res = await fetch(CHAT_ENDPOINT, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      });
-
-      if (!res.ok) {
-        const txt = await res.text();
-        throw new Error(`API error ${res.status}: ${txt}`);
-      }
-
-      // Most AI SDK routes return a text stream (text/plain)
-      const contentType = res.headers.get('content-type') || '';
-      const isTextStream = contentType.includes('text/');
-      if (!isTextStream || !res.body) {
-        // Fallback: try JSON body
-        try {
-          const data = await res.json();
-          return typeof data === 'string' ? data : JSON.stringify(data);
-        } catch {
-          return await res.text();
-        }
-      }
-
-      // Stream chunks into a string
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let result = '';
-      while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
-        result += decoder.decode(value, { stream: true });
-      }
-      result += decoder.decode(); // flush
-      return result;
-    }
-
-    // Generate handler (no API key needed)
-    async function onGenerate() {
-      const loadingEl = document.getElementById('loading');
-      try {
-        loadingEl.style.display = 'block';
-        const payload = {
-          trade: tradeEl.value,
-          title: projectEl.value,
-          city_region: document.getElementById('city').value,
-          client_type: document.getElementById('client').value,
-          job_summary: document.getElementById('summary').value
-        };
-
-        // Call your AI route
-        const raw = await streamFromAI(payload);
-
-        // Try to parse JSON first
-        let data = safeParseJSON(raw);
-        if (!data) {
-          // If the model returned prose, try to extract JSON roughly
-          const match = raw.match(/\{[\s\S]*\}$/);
-          data = match ? safeParseJSON(match[0]) : null;
-        }
-        if (!data) throw new Error("Model did not return valid JSON:\n" + raw.slice(0, 500));
-
-        // Render a preview
-        const html = `
-          <h2 style="margin:0 0 8px 0;">${payload.title || 'Proposal'}</h2>
-          <p>${(data.cover_letter || '').replace(/\n/g,'<br>')}</p>
-          <h3>Scope of Work</h3>
-          <ul>${(data.scope_of_work||[]).map(x=>`<li>${x}</li>`).join('')}</ul>
-          <h3>Inclusions</h3>
-          <ul>${(data.inclusions||[]).map(x=>`<li>${x}</li>`).join('')}</ul>
-          <h3>Exclusions</h3>
-          <ul>${(data.exclusions||[]).map(x=>`<li>${x}</li>`).join('')}</ul>
-          <h3>Terms & Conditions</h3>
-          <ul>${(data.terms_conditions||[]).map(x=>`<li>${x}</li>`).join('')}</ul>
-          <p><em>${data.acceptance_block || ''}</em></p>
-        `;
-        document.getElementById('proposalHtml').innerHTML = html;
-
-      } catch (e) {
-        showErr(e?.message || String(e));
-      } finally {
-        loadingEl.style.display = 'none';
-      }
-    }
-
-    document.getElementById('genBtn')?.addEventListener('click', onGenerate);
-    document.getElementById('generateBtn')?.addEventListener('click', onGenerate);
-
-    // Copy / Download helpers
-    document.getElementById('copyBtn')?.addEventListener('click', async () => {
-      try {
-        const txt = document.getElementById('proposalHtml').innerText;
-        await navigator.clipboard.writeText(txt);
-      } catch { alert("Copy failed."); }
-    });
-    document.getElementById('downloadBtn')?.addEventListener('click', () => {
-      const html = document.getElementById('proposalHtml').innerHTML;
-      const blob = new Blob([`<!doctype html><meta charset="utf-8"><title>Proposal</title>${html}`], { type: "text/html" });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = "proposal.html";
-      a.click();
-      URL.revokeObjectURL(a.href);
-    });
-  </script>
+  <noscript>You need to enable JavaScript to run this app.</noscript>
+  <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
 </body>
 </html>
